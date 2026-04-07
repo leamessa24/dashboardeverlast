@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Everlast Latino — Dashboard Completo</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0d0f;--bg2:#161618;--bg3:#1e1e21;--bg4:#252528;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#f0f0f0;--text2:#a0a0a8;--text3:#5a5a62;
+  --accent:#c8f147;--accent-dim:rgba(200,241,71,0.12);
+  --red:#ff5858;--amber:#f0a830;--blue:#4d9eff;--teal:#2ec4b6;--purple:#a78bfa;
+  --ig:#e1306c;--fb:#1877f2;--tt:#69c9d0;--yt:#ff5858;
+  --r:8px;--r2:14px;
+  font-family:'DM Sans',system-ui,sans-serif;
+}
+body{background:var(--bg);color:var(--text);font-size:13px;line-height:1.5;min-height:100vh}
+
+/* HEADER */
+.hdr{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 28px;display:flex;align-items:center;gap:16px;height:54px;position:sticky;top:0;z-index:300}
+.logo{background:var(--accent);color:#0d0d0f;font-weight:700;font-size:11px;letter-spacing:.8px;text-transform:uppercase;padding:5px 10px;border-radius:5px;flex-shrink:0}
+.hdr-title{font-size:14px;font-weight:500;flex:1}
+.hdr-meta{font-size:11px;color:var(--text3);font-family:monospace}
+
+/* TOP NAV — módulos */
+.top-nav{background:var(--bg2);border-bottom:2px solid var(--border);padding:0 28px;display:flex;gap:2px}
+.top-tab{padding:14px 18px;font-size:12px;font-weight:600;color:var(--text3);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .15s;white-space:nowrap;letter-spacing:.3px}
+.top-tab.active{color:var(--text);border-bottom-color:var(--accent)}
+.top-tab:hover:not(.active){color:var(--text2)}
+
+/* SUB NAV — dentro de módulos */
+.sub-nav{background:var(--bg3);border-bottom:1px solid var(--border);padding:0 28px;display:flex;gap:4px}
+.sub-tab{padding:10px 14px;font-size:11px;font-weight:500;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all .12s;white-space:nowrap}
+.sub-tab.active{color:var(--text);border-bottom-color:var(--accent)}
+.sub-tab:hover:not(.active){color:var(--text2)}
+
+/* TOOLBAR (ads) */
+.toolbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:10px 28px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.upload-btn{display:flex;align-items:center;gap:7px;background:var(--accent);color:#0d0d0f;font-size:12px;font-weight:600;padding:7px 14px;border-radius:var(--r);cursor:pointer;border:none;white-space:nowrap;flex-shrink:0}
+.upload-btn:hover{opacity:.88}
+.month-tabs{display:flex;gap:6px;flex-wrap:wrap;flex:1}
+.m-tab{padding:5px 12px;border-radius:20px;font-size:11px;border:1px solid var(--border2);color:var(--text2);background:transparent;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:6px;transition:all .15s}
+.m-tab.active{background:var(--accent);border-color:var(--accent);color:#0d0d0f;font-weight:600}
+.m-tab:hover:not(.active){background:var(--bg3);color:var(--text)}
+.m-tab .del{font-size:14px;opacity:.5;line-height:1}
+.m-tab .del:hover{opacity:1;color:var(--red)}
+.sep{width:1px;height:20px;background:var(--border2);flex-shrink:0}
+
+/* ACCT BAR (ads) */
+.acct-bar{background:var(--bg3);border-bottom:1px solid var(--border);padding:8px 28px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-height:40px}
+.acct-chip{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;border:1px solid var(--border2);color:var(--text2);background:transparent;cursor:pointer;transition:all .12s;white-space:nowrap}
+.acct-chip.on{border-color:currentColor;font-weight:500}
+.acct-chip.off{opacity:.35}
+.acct-chip .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.sel-all{font-size:11px;color:var(--text3);cursor:pointer;padding:4px 8px;border-radius:var(--r);border:1px solid var(--border)}
+.sel-all:hover{background:var(--bg4);color:var(--text2)}
+
+/* MODULE WRAPPERS */
+.module{display:none}
+.module.active{display:block}
+.sub-section{display:none}
+.sub-section.active{display:flex;flex-direction:column;gap:20px;padding:24px 28px;max-width:1280px;margin:0 auto}
+
+/* EMPTY STATE */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:80px 28px;text-align:center}
+.empty-icon{font-size:40px;opacity:.25}
+.empty h2{font-size:17px;font-weight:500;color:var(--text2)}
+.empty p{font-size:13px;color:var(--text3);max-width:340px;line-height:1.6}
+.empty-upload{display:flex;align-items:center;gap:7px;background:var(--accent);color:#0d0d0f;font-size:13px;font-weight:600;padding:10px 20px;border-radius:var(--r);cursor:pointer;border:none}
+
+/* COMMON COMPONENTS */
+.sec-lbl{font-size:10px;font-weight:600;letter-spacing:1.4px;text-transform:uppercase;color:var(--text3);margin-bottom:12px}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:16px 18px;position:relative;overflow:hidden}
+.kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--c,var(--accent))}
+.kpi-lbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:5px}
+.kpi-val{font-size:24px;font-weight:700;color:var(--text);line-height:1;font-family:monospace;letter-spacing:-.5px}
+.kpi-sub{font-size:11px;color:var(--text3);margin-top:4px}
+.up{color:#4ade80}.dn{color:#f87171}.neu{color:var(--text3)}
+
+.charts-row{display:grid;grid-template-columns:1.35fr 1fr;gap:12px}
+.chart-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:18px}
+.ct{font-size:13px;font-weight:500;color:var(--text);margin-bottom:2px}
+.cs{font-size:11px;color:var(--text3);margin-bottom:14px}
+.cw{position:relative;width:100%}
+
+.tbl-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden}
+.tbl-head{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:500}
+.tbl-count{font-size:11px;color:var(--text3);font-family:monospace}
+.scroll-x{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:600px}
+thead th{padding:8px 18px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);background:var(--bg3);border-bottom:1px solid var(--border);white-space:nowrap}
+thead th.r{text-align:right}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+tbody tr:hover{background:var(--bg3)}
+tbody tr:last-child{border-bottom:none}
+tbody td{padding:11px 18px;font-size:12px;color:var(--text)}
+tbody td.r{text-align:right;font-family:monospace;font-size:11px}
+tbody td.dim{color:var(--text3);font-size:11px}
+.ctag{display:flex;align-items:center;gap:8px}
+.cdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.bar-wrap{display:flex;align-items:center;gap:6px;justify-content:flex-end}
+.bar-bg{width:50px;height:3px;background:var(--bg4);border-radius:2px;overflow:hidden}
+.bar-fill{height:100%;border-radius:2px}
+.bdg{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;font-family:monospace}
+.bdg-g{background:var(--accent-dim);color:var(--accent)}
+.bdg-b{background:rgba(77,158,255,.12);color:var(--blue)}
+.bdg-a{background:rgba(240,168,48,.12);color:var(--amber)}
+.bdg-r{background:rgba(255,88,88,.12);color:var(--red)}
+.bdg-ig{background:rgba(225,48,108,.15);color:#e1306c}
+.bdg-fb{background:rgba(24,119,242,.15);color:#4d9eff}
+
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.camp-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
+.camp-item:last-child{border-bottom:none}
+.camp-name{font-size:11px;color:var(--text);font-family:monospace}
+.camp-acct{font-size:10px;color:var(--text3);margin-top:2px}
+.camp-val{font-size:12px;font-weight:600;font-family:monospace;color:var(--text);text-align:right}
+.camp-vsub{font-size:10px;color:var(--text3);text-align:right}
+
+.hl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.hl{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:16px}
+.hl-ico{font-size:18px;margin-bottom:8px}
+.hl-t{font-size:11px;color:var(--text3);margin-bottom:4px}
+.hl-v{font-size:17px;font-weight:700;font-family:monospace;color:var(--text);margin-bottom:4px}
+.hl-d{font-size:11px;color:var(--text3);line-height:1.5}
+
+.plat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.plat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:18px;display:flex;flex-direction:column;gap:10px}
+.plat-header{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500}
+.plat-dot{width:10px;height:10px;border-radius:50%}
+.plat-stat{display:flex;justify-content:space-between;align-items:baseline}
+.plat-stat-lbl{font-size:11px;color:var(--text3)}
+.plat-stat-val{font-size:14px;font-weight:600;font-family:monospace;color:var(--text)}
+.plat-chg{font-size:10px;margin-top:1px;text-align:right}
+
+.posts-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.post-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:14px}
+.post-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.post-date{font-size:10px;color:var(--text3);font-family:monospace}
+.post-text{font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:10px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.post-stats{display:flex;gap:10px}
+.post-stat{display:flex;flex-direction:column;align-items:center;gap:1px}
+.post-stat-val{font-size:12px;font-weight:600;font-family:monospace;color:var(--text)}
+.post-stat-lbl{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px}
+
+.nodata{padding:40px;text-align:center;color:var(--text3);font-size:13px}
+
+@media(max-width:1024px){
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+  .charts-row{grid-template-columns:1fr}
+  .two-col{grid-template-columns:1fr}
+  .hl-grid{grid-template-columns:1fr 1fr}
+  .plat-grid{grid-template-columns:repeat(2,1fr)}
+  .posts-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:640px){
+  .kpi-grid{grid-template-columns:1fr 1fr}
+  .plat-grid{grid-template-columns:1fr 1fr}
+  .posts-grid{grid-template-columns:1fr}
+  .hl-grid{grid-template-columns:1fr}
+  .top-nav,.sub-nav{overflow-x:auto}
+  .sub-section{padding:14px}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="logo">Everlast</div>
+  <div class="hdr-title">Dashboard Regional · Marzo 2026</div>
+  <div class="hdr-meta" id="hdrMeta">everlastlatino · 4 redes</div>
+</div>
+
+<!-- TOP NAVIGATION: módulos principales -->
+<div class="top-nav">
+  <div class="top-tab active" onclick="showModule('ads')">📊 Meta Ads</div>
+  <div class="top-tab" onclick="showModule('organico')">📱 Orgánico</div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     MÓDULO META ADS
+═══════════════════════════════════════════ -->
+<div class="module active" id="mod-ads">
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <label class="upload-btn">＋ Cargar Excel<input type="file" accept=".xlsx,.xls" id="fileInput" style="display:none"></label>
+    <div class="sep"></div>
+    <span style="font-size:11px;color:var(--text3)">Período:</span>
+    <div class="month-tabs" id="monthTabs"></div>
+  </div>
+  <div class="acct-bar" id="acctBar">
+    <span style="font-size:11px;color:var(--text3)">Cuentas:</span>
+    <span class="sel-all" id="selAll">Todas</span>
+  </div>
+
+  <!-- Empty state -->
+  <div id="adsEmpty" class="empty">
+    <div class="empty-icon">📊</div>
+    <h2>Sin datos de Meta Ads</h2>
+    <p>Cargá el Excel exportado de Meta para ver el dashboard de campañas. Podés agregar múltiples meses.</p>
+    <label class="empty-upload">＋ Cargar Excel<input type="file" accept=".xlsx,.xls" id="fileInput2" style="display:none"></label>
+  </div>
+
+  <!-- Ads dashboard -->
+  <div id="adsDash" style="display:none">
+    <div style="max-width:1280px;margin:0 auto;padding:24px 28px;display:flex;flex-direction:column;gap:22px">
+      <div>
+        <div class="sec-lbl" id="kpiLabel">Resumen</div>
+        <div class="kpi-grid" id="kpiGrid"></div>
+      </div>
+      <div class="charts-row">
+        <div class="chart-card"><div class="ct">Inversión por cuenta</div><div class="cs">Gasto en USD</div><div class="cw" style="height:260px"><canvas id="cInv"></canvas></div></div>
+        <div class="chart-card"><div class="ct">Distribución de alcance</div><div class="cs">% por cuenta</div><div class="cw" style="height:260px"><canvas id="cDon"></canvas></div></div>
+      </div>
+      <div>
+        <div class="sec-lbl">Rendimiento por cuenta</div>
+        <div class="tbl-wrap">
+          <div class="tbl-head"><span id="tblTitle">Cuentas activas</span><span class="tbl-count" id="tblCount"></span></div>
+          <div class="scroll-x"><table><thead><tr><th>Cuenta</th><th class="r">Invertido</th><th class="r">Alcance</th><th class="r">Impresiones</th><th class="r">Interacciones</th><th class="r">Clics</th><th class="r">CPM</th><th class="r">CTR</th></tr></thead><tbody id="acctTbody"></tbody></table></div>
+        </div>
+      </div>
+      <div class="charts-row">
+        <div class="chart-card"><div class="ct">Interacciones vs Clics</div><div class="cs">Comparativa por cuenta</div><div class="cw" style="height:250px"><canvas id="cEng"></canvas></div></div>
+        <div class="chart-card"><div class="ct">CPM por cuenta</div><div class="cs">Menor = más eficiente</div><div class="cw" style="height:250px"><canvas id="cCpm"></canvas></div></div>
+      </div>
+      <div>
+        <div class="sec-lbl">Campañas destacadas</div>
+        <div class="two-col">
+          <div class="chart-card"><div class="ct">Mayor inversión</div><div class="cs">Top por gasto USD</div><div id="topInv"></div></div>
+          <div class="chart-card"><div class="ct">Mayor alcance</div><div class="cs">Top por personas alcanzadas</div><div id="topAlc"></div></div>
+        </div>
+      </div>
+      <div>
+        <div class="sec-lbl">Puntos clave</div>
+        <div class="hl-grid" id="hlGrid"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     MÓDULO ORGÁNICO
+═══════════════════════════════════════════ -->
+<div class="module" id="mod-organico">
+  <div class="sub-nav">
+    <div class="sub-tab active" onclick="showSub('resumen')">◎ Resumen</div>
+    <div class="sub-tab" onclick="showSub('instagram')" style="color:#e1306c">● Instagram</div>
+    <div class="sub-tab" onclick="showSub('facebook')" style="color:#1877f2">● Facebook</div>
+    <div class="sub-tab" onclick="showSub('tiktok')" style="color:#69c9d0">● TikTok</div>
+    <div class="sub-tab" onclick="showSub('youtube')" style="color:#ff5858">● YouTube</div>
+    <div class="sub-tab" onclick="showSub('competidores')">⚡ Competidores</div>
+  </div>
+
+  <!-- RESUMEN -->
+  <div class="sub-section active" id="sub-resumen">
+    <div>
+      <div class="sec-lbl">Seguidores totales · Marzo 2026</div>
+      <div class="plat-grid">
+        <div class="plat-card"><div class="plat-header"><div class="plat-dot" style="background:#1877f2"></div>Facebook</div><div class="plat-stat"><span class="plat-stat-lbl">Seguidores</span><span class="plat-stat-val">5,920</span></div><div class="plat-chg up">+1.58%</div><div class="plat-stat"><span class="plat-stat-lbl">Impresiones</span><span class="plat-stat-val">8.71M</span></div><div class="plat-chg up">+134.47%</div></div>
+        <div class="plat-card"><div class="plat-header"><div class="plat-dot" style="background:#e1306c"></div>Instagram</div><div class="plat-stat"><span class="plat-stat-lbl">Seguidores</span><span class="plat-stat-val">141.14K</span></div><div class="plat-chg up">+4.37%</div><div class="plat-stat"><span class="plat-stat-lbl">Impresiones</span><span class="plat-stat-val">11.12M</span></div><div class="plat-chg up">+119.12%</div></div>
+        <div class="plat-card"><div class="plat-header"><div class="plat-dot" style="background:#69c9d0"></div>TikTok</div><div class="plat-stat"><span class="plat-stat-lbl">Seguidores</span><span class="plat-stat-val">636</span></div><div class="plat-chg up">+3.08%</div><div class="plat-stat"><span class="plat-stat-lbl">Reproducciones</span><span class="plat-stat-val">9,564</span></div><div class="plat-chg up">+36.80%</div></div>
+        <div class="plat-card"><div class="plat-header"><div class="plat-dot" style="background:#ff5858"></div>YouTube</div><div class="plat-stat"><span class="plat-stat-lbl">Suscriptores</span><span class="plat-stat-val">581</span></div><div class="plat-chg up">+3.01%</div><div class="plat-stat"><span class="plat-stat-lbl">Reproducciones</span><span class="plat-stat-val">7,260</span></div><div class="plat-chg up">+454.62%</div></div>
+      </div>
+    </div>
+    <div class="charts-row">
+      <div class="chart-card"><div class="ct">Impresiones por plataforma</div><div class="cs">Total 19.85M combinadas</div><div class="cw" style="height:240px"><canvas id="cOrgImpr"></canvas></div></div>
+      <div class="chart-card"><div class="ct">Seguidores por red</div><div class="cs">Distribución</div><div class="cw" style="height:240px"><canvas id="cOrgSeg"></canvas></div></div>
+    </div>
+    <div>
+      <div class="sec-lbl">Publicaciones del mes</div>
+      <div class="kpi-grid">
+        <div class="kpi" style="--c:#1877f2"><div class="kpi-lbl">Facebook posts</div><div class="kpi-val">145</div><div class="kpi-sub up">+30.63%</div></div>
+        <div class="kpi" style="--c:#e1306c"><div class="kpi-lbl">Instagram posts</div><div class="kpi-val">276</div><div class="kpi-sub up">+50.00%</div></div>
+        <div class="kpi" style="--c:#69c9d0"><div class="kpi-lbl">TikTok posts</div><div class="kpi-val">13</div><div class="kpi-sub up">+18.18%</div></div>
+        <div class="kpi" style="--c:#ff5858"><div class="kpi-lbl">YouTube videos</div><div class="kpi-val">10</div><div class="kpi-sub up">+900%</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INSTAGRAM -->
+  <div class="sub-section" id="sub-instagram">
+    <div>
+      <div class="sec-lbl">Instagram @everlastlatino · Marzo 2026</div>
+      <div class="kpi-grid">
+        <div class="kpi" style="--c:#e1306c"><div class="kpi-lbl">Seguidores</div><div class="kpi-val">141.14K</div><div class="kpi-sub up">+4.37% · +5,907 netos</div></div>
+        <div class="kpi" style="--c:#e1306c"><div class="kpi-lbl">Impresiones</div><div class="kpi-val">11.12M</div><div class="kpi-sub up">+119.12%</div></div>
+        <div class="kpi" style="--c:#e1306c"><div class="kpi-lbl">Alcance prom/día</div><div class="kpi-val">292K</div><div class="kpi-sub up">+144.23%</div></div>
+        <div class="kpi" style="--c:#e1306c"><div class="kpi-lbl">Interacciones posts</div><div class="kpi-val">798</div><div class="kpi-sub up">+1713%</div></div>
+        <div class="kpi" style="--c:#e1306c"><div class="kpi-lbl">Me gusta</div><div class="kpi-val">491</div><div class="kpi-sub up">+1227%</div></div>
+        <div class="kpi" style="--c:#e1306c"><div class="kpi-lbl">Guardados</div><div class="kpi-val">255</div><div class="kpi-sub up">+8400%</div></div>
+        <div class="kpi" style="--c:#e1306c"><div class="kpi-lbl">Historias</div><div class="kpi-val">259</div><div class="kpi-sub up">+52.35%</div></div>
+        <div class="kpi" style="--c:#e1306c"><div class="kpi-lbl">Reels engagement</div><div class="kpi-val">2.56</div><div class="kpi-sub dn">-60.11%</div></div>
+      </div>
+    </div>
+    <div class="charts-row">
+      <div class="chart-card"><div class="ct">Interacciones en posts</div><div class="cs">Me gusta · Guardados · Comentarios · Compartidos</div><div class="cw" style="height:220px"><canvas id="cIgInter"></canvas></div></div>
+      <div class="chart-card"><div class="ct">Audiencia por género</div><div class="cs">Mujer 51.13% · Hombre 40.25%</div><div class="cw" style="height:220px"><canvas id="cIgGenero"></canvas></div></div>
+    </div>
+    <div>
+      <div class="sec-lbl">Top posts por alcance · Instagram</div>
+      <div class="posts-grid">
+        <div class="post-card"><div class="post-meta"><span class="post-date">11 mar · 19:44</span><span class="bdg bdg-ig">IG</span></div><div class="post-text">Entrenar cambia más que el cuerpo. Cambia tu energía. Tu mentalidad.</div><div class="post-stats"><div class="post-stat"><span class="post-stat-val">4,664</span><span class="post-stat-lbl">Alcance</span></div><div class="post-stat"><span class="post-stat-val">84</span><span class="post-stat-lbl">Likes</span></div><div class="post-stat"><span class="post-stat-val">65</span><span class="post-stat-lbl">Guardados</span></div><div class="post-stat"><span class="post-stat-val">3.49</span><span class="post-stat-lbl">Eng.</span></div></div></div>
+        <div class="post-card"><div class="post-meta"><span class="post-date">8 mar · 19:34</span><span class="bdg bdg-ig">IG</span></div><div class="post-text">Cada mujer entrena su propio camino. Cada paso construye quién es hoy.</div><div class="post-stats"><div class="post-stat"><span class="post-stat-val">4,645</span><span class="post-stat-lbl">Alcance</span></div><div class="post-stat"><span class="post-stat-val">61</span><span class="post-stat-lbl">Likes</span></div><div class="post-stat"><span class="post-stat-val">23</span><span class="post-stat-lbl">Guardados</span></div><div class="post-stat"><span class="post-stat-val">1.94</span><span class="post-stat-lbl">Eng.</span></div></div></div>
+        <div class="post-card"><div class="post-meta"><span class="post-date">10 mar · 1:47</span><span class="bdg bdg-ig">IG</span></div><div class="post-text">Cada paso cuenta cuando entrenas para algo más grande. Así comienza JOURNEY.</div><div class="post-stats"><div class="post-stat"><span class="post-stat-val">4,560</span><span class="post-stat-lbl">Alcance</span></div><div class="post-stat"><span class="post-stat-val">96</span><span class="post-stat-lbl">Likes</span></div><div class="post-stat"><span class="post-stat-val">77</span><span class="post-stat-lbl">Guardados</span></div><div class="post-stat"><span class="post-stat-val">3.95</span><span class="post-stat-lbl">Eng.</span></div></div></div>
+        <div class="post-card"><div class="post-meta"><span class="post-date">27 mar · 20:02</span><span class="bdg bdg-ig">Reel</span></div><div class="post-text">Encuéntranos en Do It Panamá. Descubre una amplia variedad de productos.</div><div class="post-stats"><div class="post-stat"><span class="post-stat-val">7,155</span><span class="post-stat-lbl">Alcance</span></div><div class="post-stat"><span class="post-stat-val">56</span><span class="post-stat-lbl">Likes</span></div><div class="post-stat"><span class="post-stat-val">8</span><span class="post-stat-lbl">Guardados</span></div><div class="post-stat"><span class="post-stat-val">0.98</span><span class="post-stat-lbl">Eng.</span></div></div></div>
+        <div class="post-card"><div class="post-meta"><span class="post-date">11 mar · 0:32</span><span class="bdg bdg-ig">Reel</span></div><div class="post-text">Todo gran logro empieza con un primer paso. She trains for life. She evolves.</div><div class="post-stats"><div class="post-stat"><span class="post-stat-val">5,849</span><span class="post-stat-lbl">Alcance</span></div><div class="post-stat"><span class="post-stat-val">141</span><span class="post-stat-lbl">Likes</span></div><div class="post-stat"><span class="post-stat-val">186</span><span class="post-stat-lbl">Guardados</span></div><div class="post-stat"><span class="post-stat-val">6.33</span><span class="post-stat-lbl">Eng.</span></div></div></div>
+        <div class="post-card"><div class="post-meta"><span class="post-date">18 mar · 23:30</span><span class="bdg bdg-ig">IG</span></div><div class="post-text">No es solo una colección. Es un camino. Conoce JOURNEY – Strides.</div><div class="post-stats"><div class="post-stat"><span class="post-stat-val">3,439</span><span class="post-stat-lbl">Alcance</span></div><div class="post-stat"><span class="post-stat-val">61</span><span class="post-stat-lbl">Likes</span></div><div class="post-stat"><span class="post-stat-val">33</span><span class="post-stat-lbl">Guardados</span></div><div class="post-stat"><span class="post-stat-val">3.00</span><span class="post-stat-lbl">Eng.</span></div></div></div>
+      </div>
+    </div>
+    <div class="charts-row">
+      <div class="chart-card"><div class="ct">Top países · Instagram</div><div class="cs">% de audiencia</div><div class="cw" style="height:240px"><canvas id="cIgPaises"></canvas></div></div>
+      <div class="chart-card"><div class="ct">Edades · Instagram</div><div class="cs">Distribución etaria</div><div class="cw" style="height:240px"><canvas id="cIgEdades"></canvas></div></div>
+    </div>
+  </div>
+
+  <!-- FACEBOOK -->
+  <div class="sub-section" id="sub-facebook">
+    <div>
+      <div class="sec-lbl">Facebook EverlastLatino · Marzo 2026</div>
+      <div class="kpi-grid">
+        <div class="kpi" style="--c:#1877f2"><div class="kpi-lbl">Seguidores</div><div class="kpi-val">5,920</div><div class="kpi-sub up">+1.58%</div></div>
+        <div class="kpi" style="--c:#1877f2"><div class="kpi-lbl">Impresiones</div><div class="kpi-val">8.71M</div><div class="kpi-sub up">+134.47%</div></div>
+        <div class="kpi" style="--c:#1877f2"><div class="kpi-lbl">Publicaciones vistas</div><div class="kpi-val">1.88M</div><div class="kpi-sub up">+6.70%</div></div>
+        <div class="kpi" style="--c:#1877f2"><div class="kpi-lbl">Interacciones</div><div class="kpi-val">1,698</div><div class="kpi-sub dn">-92.32%</div></div>
+        <div class="kpi" style="--c:#1877f2"><div class="kpi-lbl">Nuevos seguidores</div><div class="kpi-val">106</div><div class="kpi-sub up">+0.95%</div></div>
+        <div class="kpi" style="--c:#1877f2"><div class="kpi-lbl">Perdidos</div><div class="kpi-val">6</div><div class="kpi-sub up">-50%</div></div>
+        <div class="kpi" style="--c:#1877f2"><div class="kpi-lbl">Posts</div><div class="kpi-val">145</div><div class="kpi-sub up">+30.63%</div></div>
+        <div class="kpi" style="--c:#1877f2"><div class="kpi-lbl">Historias</div><div class="kpi-val">127</div><div class="kpi-sub up">+30.93%</div></div>
+      </div>
+    </div>
+    <div class="charts-row">
+      <div class="chart-card"><div class="ct">Top países · Facebook</div><div class="cs">Colombia domina con 78.55%</div><div class="cw" style="height:260px"><canvas id="cFbPaises"></canvas></div></div>
+      <div class="chart-card"><div class="ct">Top posts por impresiones</div><div class="cs">Facebook · Marzo 2026</div>
+        <div style="display:flex;flex-direction:column;gap:0">
+          <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:11px"><span style="color:var(--text2);flex:1;margin-right:12px">Cada paso cuenta cuando entrenas – JOURNEY</span><span style="font-family:monospace;color:var(--text);flex-shrink:0">8,466 imp</span></div>
+          <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:11px"><span style="color:var(--text2);flex:1;margin-right:12px">Entrenar cambia más que el cuerpo</span><span style="font-family:monospace;color:var(--text);flex-shrink:0">8,078 imp</span></div>
+          <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:11px"><span style="color:var(--text2);flex:1;margin-right:12px">Encuéntranos en Do It Panamá</span><span style="font-family:monospace;color:var(--text);flex-shrink:0">7,983 imp</span></div>
+          <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:11px"><span style="color:var(--text2);flex:1;margin-right:12px">Cada mujer entrena su propio camino – 8M</span><span style="font-family:monospace;color:var(--text);flex-shrink:0">7,243 imp</span></div>
+          <div style="display:flex;justify-content:space-between;padding:10px 0;font-size:11px"><span style="color:var(--text2);flex:1;margin-right:12px">Todo gran logro empieza con un primer paso</span><span style="font-family:monospace;color:var(--text);flex-shrink:0">7,232 imp</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TIKTOK -->
+  <div class="sub-section" id="sub-tiktok">
+    <div>
+      <div class="sec-lbl">TikTok @Everlast Latino · Marzo 2026</div>
+      <div class="kpi-grid">
+        <div class="kpi" style="--c:#69c9d0"><div class="kpi-lbl">Seguidores</div><div class="kpi-val">636</div><div class="kpi-sub up">+3.08%</div></div>
+        <div class="kpi" style="--c:#69c9d0"><div class="kpi-lbl">Reproducciones</div><div class="kpi-val">9,564</div><div class="kpi-sub up">+36.80%</div></div>
+        <div class="kpi" style="--c:#69c9d0"><div class="kpi-lbl">Engagement prom.</div><div class="kpi-val">2.45</div><div class="kpi-sub dn">-26.41%</div></div>
+        <div class="kpi" style="--c:#69c9d0"><div class="kpi-lbl">Me gusta</div><div class="kpi-val">195</div><div class="kpi-sub up">+8.33%</div></div>
+        <div class="kpi" style="--c:#69c9d0"><div class="kpi-lbl">Alcance prom/post</div><div class="kpi-val">542</div><div class="kpi-sub up">+13.03%</div></div>
+        <div class="kpi" style="--c:#69c9d0"><div class="kpi-lbl">Posts</div><div class="kpi-val">13</div><div class="kpi-sub up">+18.18%</div></div>
+        <div class="kpi" style="--c:#69c9d0"><div class="kpi-lbl">Adquiridos</div><div class="kpi-val">25</div><div class="kpi-sub up">+31.58%</div></div>
+        <div class="kpi" style="--c:#69c9d0"><div class="kpi-lbl">Visitas al perfil</div><div class="kpi-val">128</div><div class="kpi-sub up">+16.36%</div></div>
+      </div>
+    </div>
+    <div class="charts-row">
+      <div class="chart-card"><div class="ct">Género · TikTok</div><div class="cs">Hombre 55% · Mujer 45%</div><div class="cw" style="height:220px"><canvas id="cTtGenero"></canvas></div></div>
+      <div class="chart-card"><div class="ct">Top países · TikTok</div><div class="cs">% de audiencia</div><div class="cw" style="height:220px"><canvas id="cTtPaises"></canvas></div></div>
+    </div>
+  </div>
+
+  <!-- YOUTUBE -->
+  <div class="sub-section" id="sub-youtube">
+    <div>
+      <div class="sec-lbl">YouTube EVERLAST LATINO · Marzo 2026</div>
+      <div class="kpi-grid">
+        <div class="kpi" style="--c:#ff5858"><div class="kpi-lbl">Suscriptores</div><div class="kpi-val">581</div><div class="kpi-sub up">+3.01%</div></div>
+        <div class="kpi" style="--c:#ff5858"><div class="kpi-lbl">Ganados</div><div class="kpi-val">17</div><div class="kpi-sub up">+142.86%</div></div>
+        <div class="kpi" style="--c:#ff5858"><div class="kpi-lbl">Reproducciones</div><div class="kpi-val">7,260</div><div class="kpi-sub up">+454.62%</div></div>
+        <div class="kpi" style="--c:#ff5858"><div class="kpi-lbl">Videos publicados</div><div class="kpi-val">10</div><div class="kpi-sub up">+900%</div></div>
+        <div class="kpi" style="--c:#ff5858"><div class="kpi-lbl">Me gusta</div><div class="kpi-val">60</div><div class="kpi-sub neu">—</div></div>
+        <div class="kpi" style="--c:#ff5858"><div class="kpi-lbl">Tráfico Shorts</div><div class="kpi-val">82.85%</div><div class="kpi-sub neu">del total</div></div>
+        <div class="kpi" style="--c:#ff5858"><div class="kpi-lbl">Top país</div><div class="kpi-val">ARG</div><div class="kpi-sub neu">23.66% del tráfico</div></div>
+        <div class="kpi" style="--c:#ff5858"><div class="kpi-lbl">Ingresos</div><div class="kpi-val">$0</div><div class="kpi-sub neu">Canal sin monetizar</div></div>
+      </div>
+    </div>
+    <div class="chart-card"><div class="ct">Tipo de tráfico · YouTube</div><div class="cs">Cómo llega la gente a los videos</div><div class="cw" style="height:220px"><canvas id="cYtTrafico"></canvas></div></div>
+    <div>
+      <div class="sec-lbl">Top videos por reproducciones</div>
+      <div class="tbl-wrap">
+        <div class="scroll-x"><table><thead><tr><th>Fecha</th><th>Texto</th><th class="r">Reprod.</th><th class="r">Tiempo total</th><th class="r">Media vis.</th><th class="r">Likes</th></tr></thead><tbody>
+          <tr><td class="dim">13 mar</td><td>Entre respiraciones y movimiento, Tiffy encuentra equilibrio</td><td class="r">1,980</td><td class="r">4h 11m</td><td class="r">7s</td><td class="r">41</td></tr>
+          <tr><td class="dim">28 mar</td><td>Vestir es una cosa. Stylear es otra.</td><td class="r">1,162</td><td class="r">2h 21m</td><td class="r">7s</td><td class="r">2</td></tr>
+          <tr><td class="dim">26 mar</td><td>No, no es lo mismo. Guarda este video...</td><td class="r">1,144</td><td class="r">1h 59m</td><td class="r">6s</td><td class="r">6</td></tr>
+          <tr><td class="dim">24 mar</td><td>Agua, lluvia o entrenamiento… el ritmo no se detiene</td><td class="r">1,059</td><td class="r">3h 42m</td><td class="r">12s</td><td class="r">10</td></tr>
+          <tr><td class="dim">11 mar</td><td>Todo gran logro empieza con un primer paso</td><td class="r">511</td><td class="r">21m</td><td class="r">2s</td><td class="r">0</td></tr>
+        </tbody></table></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPETIDORES -->
+  <div class="sub-section" id="sub-competidores">
+    <div>
+      <div class="sec-lbl">Benchmark · Instagram · Marzo 2026</div>
+      <div class="tbl-wrap">
+        <div class="scroll-x"><table><thead><tr><th>Cuenta</th><th class="r">Seguidores</th><th class="r">Posts</th><th class="r">Reels</th><th class="r">Likes prom</th><th class="r">Comentarios</th><th class="r">Engagement</th></tr></thead>
+        <tbody>
+          <tr><td><strong style="color:var(--text2)">Nike</strong><br><span class="dim">@nike</span></td><td class="r">297.71M</td><td class="r">10</td><td class="r">3</td><td class="r">62,410</td><td class="r">829</td><td class="r"><span class="bdg" style="background:rgba(90,90,98,.15);color:var(--text3)">0.02%</span></td></tr>
+          <tr><td><strong style="color:var(--text2)">Reebok</strong><br><span class="dim">@reebok</span></td><td class="r">4.41M</td><td class="r">28</td><td class="r">13</td><td class="r">4,608</td><td class="r">61</td><td class="r"><span class="bdg bdg-a">0.11%</span></td></tr>
+          <tr><td><strong style="color:var(--text2)">Under Armour LATAM</strong><br><span class="dim">@underarmourlatam</span></td><td class="r">1.16M</td><td class="r">14</td><td class="r">3</td><td class="r">888</td><td class="r">24</td><td class="r"><span class="bdg bdg-a">0.08%</span></td></tr>
+          <tr style="background:rgba(200,241,71,0.04)"><td><strong style="color:var(--accent)">Everlast</strong><br><span class="dim">@everlast</span></td><td class="r">545.87K</td><td class="r">11</td><td class="r">19</td><td class="r">7,347</td><td class="r">53</td><td class="r"><span class="bdg bdg-g">1.36%</span></td></tr>
+          <tr><td><strong style="color:var(--text2)">Nike LA</strong><br><span class="dim">@nikela</span></td><td class="r">439.2K</td><td class="r">11</td><td class="r">5</td><td class="r">2,490</td><td class="r">58</td><td class="r"><span class="bdg bdg-b">0.58%</span></td></tr>
+          <tr><td><strong style="color:var(--text2)">adidas Panamá</strong><br><span class="dim">@adidaspa</span></td><td class="r">180.42K</td><td class="r">12</td><td class="r">10</td><td class="r">1,283</td><td class="r">32</td><td class="r"><span class="bdg bdg-b">0.73%</span></td></tr>
+          <tr><td><strong style="color:var(--text2)">Reebok Latam</strong><br><span class="dim">@reeboklatam</span></td><td class="r">131.84K</td><td class="r">2</td><td class="r">—</td><td class="r">17</td><td class="r">0.5</td><td class="r"><span class="bdg" style="background:rgba(90,90,98,.15);color:var(--text3)">0.01%</span></td></tr>
+          <tr><td><strong style="color:var(--text2)">Reebok Panamá</strong><br><span class="dim">@reebokpanama</span></td><td class="r">78.29K</td><td class="r">3</td><td class="r">2</td><td class="r">4,468</td><td class="r">169</td><td class="r"><span class="bdg bdg-g">5.92%</span></td></tr>
+        </tbody></table></div>
+      </div>
+    </div>
+    <div class="charts-row">
+      <div class="chart-card"><div class="ct">Engagement rate</div><div class="cs">Everlast Latino vs competidores</div><div class="cw" style="height:240px"><canvas id="cCompEng"></canvas></div></div>
+      <div class="chart-card"><div class="ct">Seguidores regionales</div><div class="cs">Excluye Nike global (297M)</div><div class="cw" style="height:240px"><canvas id="cCompSeg"></canvas></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── PALETA ──
+const PALETTE=['#c8f147','#4d9eff','#a78bfa','#f472b6','#2ec4b6','#f0a830','#ff5858','#06d6a0','#818cf8','#fb923c','#e879f9','#38bdf8'];
+const charts={};
+function dc(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+
+// ── NAVIGATION ──
+function showModule(m){
+  document.querySelectorAll('.module').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.top-tab').forEach(el=>el.classList.remove('active'));
+  document.getElementById('mod-'+m).classList.add('active');
+  document.querySelectorAll('.top-tab').forEach(el=>{if(el.getAttribute('onclick')===`showModule('${m}')`)el.classList.add('active');});
+  if(m==='organico') renderOrgResumen();
+}
+
+function showSub(s){
+  document.querySelectorAll('.sub-section').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.sub-tab').forEach(el=>el.classList.remove('active'));
+  document.getElementById('sub-'+s).classList.add('active');
+  document.querySelectorAll('.sub-tab').forEach(el=>{if(el.getAttribute('onclick')===`showSub('${s}')`)el.classList.add('active');});
+  if(s==='resumen') renderOrgResumen();
+  else if(s==='instagram') renderIG();
+  else if(s==='facebook') renderFB();
+  else if(s==='tiktok') renderTT();
+  else if(s==='youtube') renderYT();
+  else if(s==='competidores') renderComp();
+}
+
+// ════════════════════════
+// META ADS LOGIC
+// ════════════════════════
+const STORE_KEY='everlast_dash_v3';
+let db={},activeMonth=null,selectedAccts=new Set();
+
+function saveDB(){try{localStorage.setItem(STORE_KEY,JSON.stringify({db,activeMonth}));}catch(e){}}
+function loadDB(){try{const s=localStorage.getItem(STORE_KEY);if(!s)return;const p=JSON.parse(s);db=p.db||{};activeMonth=p.activeMonth||null;}catch(e){}}
+
+function parseExcel(file){
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array'});
+      const sheetName=wb.SheetNames.find(n=>n.toLowerCase().includes('raw'))||wb.SheetNames[0];
+      const ws=wb.Sheets[sheetName];
+      const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      let hdrRow=-1;
+      for(let i=0;i<rows.length;i++){if(rows[i].some(c=>typeof c==='string'&&c.toLowerCase().includes('nombre de la cuenta'))){hdrRow=i;break;}}
+      if(hdrRow===-1){alert('No se encontró el encabezado. Verificá el formato.');return;}
+      const headers=rows[hdrRow].map(h=>(h||'').toString().toLowerCase().trim());
+      const ci=n=>headers.findIndex(h=>h.includes(n));
+      const iAcct=ci('nombre de la cuenta'),iCamp=ci('nombre de la campaña'),iReach=ci('alcance'),iImpr=ci('impresiones'),iSpent=ci('importe gastado'),iCPM=ci('cpm'),iInter=ci('interacciones con la publicación'),iVideo=ci('reproducciones de video'),iClicks=ci('clics en el enlace'),iCTR=ci('ctr'),iStart=ci('inicio del informe');
+      const dataRows=rows.slice(hdrRow+1).filter(r=>r[iAcct]&&r[iAcct].toString().trim());
+      let period='Sin fecha';
+      if(dataRows.length&&dataRows[0][iStart]){
+        const raw=dataRows[0][iStart].toString().trim();
+        const parts=raw.slice(0,10).split('-');
+        const months=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+        if(parts.length===3&&months[parseInt(parts[1],10)-1])period=months[parseInt(parts[1],10)-1]+' '+parts[0];
+        else period=raw.slice(0,7);
+      }
+      if(db[period]&&!confirm(`Ya existe "${period}". ¿Sobreescribir?`))return;
+      const n=v=>(typeof v==='number')?v:parseFloat(v)||0;
+      const accounts={},campaigns=[];
+      dataRows.forEach(r=>{
+        const acct=(r[iAcct]||'').toString().trim();
+        const camp=(r[iCamp]||'').toString().trim();
+        const isAll=camp.toLowerCase()==='all'||!camp;
+        const row={account:acct,campaign:camp,spent:n(r[iSpent]),reach:n(r[iReach]),impressions:n(r[iImpr]),interactions:n(r[iInter]),videoViews:n(r[iVideo]),clicks:n(r[iClicks]),ctr:n(r[iCTR]),cpm:n(r[iCPM])};
+        if(isAll&&acct)accounts[acct]=row;
+        else if(acct&&!isAll)campaigns.push(row);
+      });
+      db[period]={accounts:Object.values(accounts),campaigns};
+      activeMonth=period;
+      saveDB();
+      adsInit();
+    }catch(err){console.error(err);alert('Error: '+err.message);}
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function getColor(i){return PALETTE[i%PALETTE.length];}
+function shortName(n){return n.replace('Everlast ','').replace('Colombia Branding','Colombia');}
+function fmt(n){if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(0)+'K';return n.toFixed(0);}
+
+function deleteMonth(m){if(!confirm(`¿Eliminar "${m}"?`))return;delete db[m];const keys=Object.keys(db);activeMonth=keys.length?keys[keys.length-1]:null;saveDB();adsInit();}
+
+function buildMonthTabs(){
+  const tabs=document.getElementById('monthTabs');
+  tabs.innerHTML='';
+  Object.keys(db).forEach(m=>{
+    const t=document.createElement('div');
+    t.className='m-tab'+(m===activeMonth?' active':'');
+    t.innerHTML=`<span>${m}</span><span class="del" data-m="${m}">×</span>`;
+    t.querySelector('span:first-child').onclick=()=>{activeMonth=m;saveDB();adsRender();};
+    t.querySelector('.del').onclick=ev=>{ev.stopPropagation();deleteMonth(m);};
+    tabs.appendChild(t);
+  });
+  if(!Object.keys(db).length)tabs.innerHTML='<span style="font-size:11px;color:var(--text3)">Cargá un Excel para comenzar</span>';
+}
+
+function buildAcctFilter(allAccts){
+  const bar=document.getElementById('acctBar');
+  bar.querySelectorAll('.acct-chip').forEach(c=>c.remove());
+  const selAll=document.getElementById('selAll');
+  allAccts.forEach((a,i)=>{
+    const col=getColor(i);
+    const chip=document.createElement('div');
+    chip.className='acct-chip'+(selectedAccts.has(a.account)?' on':' off');
+    chip.style.color=col;
+    chip.innerHTML=`<div class="dot" style="background:${col}"></div>${shortName(a.account)}`;
+    chip.onclick=()=>{if(selectedAccts.has(a.account))selectedAccts.delete(a.account);else selectedAccts.add(a.account);adsRender();};
+    bar.insertBefore(chip,selAll);
+  });
+  selAll.textContent=selectedAccts.size===allAccts.length?'Ninguna':'Todas';
+  selAll.onclick=()=>{if(selectedAccts.size===allAccts.length)selectedAccts.clear();else allAccts.forEach(a=>selectedAccts.add(a.account));adsRender();};
+}
+
+function adsRender(){
+  if(!activeMonth||!db[activeMonth]){document.getElementById('adsDash').style.display='none';document.getElementById('adsEmpty').style.display='flex';return;}
+  document.getElementById('adsEmpty').style.display='none';
+  document.getElementById('adsDash').style.display='block';
+  const data=db[activeMonth];
+  const allAccts=data.accounts;
+  const acctNames=new Set(allAccts.map(a=>a.account));
+  [...selectedAccts].forEach(n=>{if(!acctNames.has(n))selectedAccts.delete(n);});
+  buildAcctFilter(allAccts);
+  const accts=allAccts.filter(a=>selectedAccts.has(a.account));
+  const camps=data.campaigns.filter(c=>selectedAccts.has(c.account));
+  document.getElementById('hdrMeta').textContent=activeMonth+' · '+accts.length+' cuentas';
+  document.getElementById('kpiLabel').textContent='Resumen — '+activeMonth;
+  const totSpent=accts.reduce((s,a)=>s+a.spent,0);
+  const totReach=accts.reduce((s,a)=>s+a.reach,0);
+  const totImpr=accts.reduce((s,a)=>s+a.impressions,0);
+  const totInter=accts.reduce((s,a)=>s+a.interactions,0);
+  const totClicks=accts.reduce((s,a)=>s+a.clicks,0);
+  const totVideo=accts.reduce((s,a)=>s+a.videoViews,0);
+  const avgCPM=accts.length?accts.reduce((s,a)=>s+a.cpm,0)/accts.length:0;
+  const avgCTR=totImpr>0?(totClicks/totImpr*100):0;
+  const kpis=[
+    {l:'Inversión total',v:'$'+totSpent.toLocaleString('es-AR',{maximumFractionDigits:0}),s:'USD',c:'#c8f147'},
+    {l:'Alcance total',v:fmt(totReach),s:'Personas únicas',c:'#4d9eff'},
+    {l:'Impresiones',v:fmt(totImpr),s:'Total de vistas',c:'#f0a830'},
+    {l:'Interacciones',v:fmt(totInter),s:'Likes + comentarios',c:'#2ec4b6'},
+    {l:'Clics enlace',v:fmt(totClicks),s:'Clics totales',c:'#a78bfa'},
+    {l:'Video views 3s',v:fmt(totVideo),s:'Reproducciones',c:'#f472b6'},
+    {l:'CPM promedio',v:'$'+avgCPM.toFixed(2),s:'Por 1000 impresiones',c:'#4d9eff'},
+    {l:'CTR promedio',v:avgCTR.toFixed(2)+'%',s:'Tasa de clics',c:'#c8f147'},
+  ];
+  document.getElementById('kpiGrid').innerHTML=kpis.map(k=>`<div class="kpi" style="--c:${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div><div class="kpi-sub">${k.s}</div></div>`).join('');
+  const maxReach=Math.max(...accts.map(a=>a.reach),1);
+  document.getElementById('tblCount').textContent=accts.length+' cuentas';
+  document.getElementById('acctTbody').innerHTML=accts.map((a,i)=>{
+    const col=getColor(allAccts.indexOf(a));
+    const ctrCls=a.ctr>=3?'bdg-g':a.ctr>=2?'bdg-b':'bdg-a';
+    return `<tr><td><div class="ctag"><div class="cdot" style="background:${col}"></div>${a.account}</div></td><td class="r">$${a.spent.toFixed(0)}</td><td class="r"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${(a.reach/maxReach*100).toFixed(0)}%;background:${col}"></div></div>${fmt(a.reach)}</div></td><td class="r">${fmt(a.impressions)}</td><td class="r">${fmt(a.interactions)}</td><td class="r">${fmt(a.clicks)}</td><td class="r">$${a.cpm.toFixed(2)}</td><td class="r"><span class="bdg ${ctrCls}">${a.ctr.toFixed(2)}%</span></td></tr>`;
+  }).join('')||'<tr><td colspan="8" class="nodata">Sin cuentas seleccionadas</td></tr>';
+  const labels=accts.map(a=>shortName(a.account));
+  const colors=accts.map((_,i)=>getColor(allAccts.findIndex(x=>x.account===accts[i].account)));
+  dc('cInv');charts.cInv=new Chart(document.getElementById('cInv'),{type:'bar',data:{labels,datasets:[{data:accts.map(a=>+a.spent.toFixed(0)),backgroundColor:colors.map(c=>c+'bb'),borderColor:colors,borderWidth:1,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#5a5a62',font:{size:9}},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'#5a5a62',font:{size:10},callback:v=>'$'+v},grid:{color:'rgba(255,255,255,0.05)'}}}}});
+  dc('cDon');charts.cDon=new Chart(document.getElementById('cDon'),{type:'doughnut',data:{labels,datasets:[{data:accts.map(a=>a.reach),backgroundColor:colors.map(c=>c+'bb'),borderColor:'#161618',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{display:true,position:'bottom',labels:{color:'#a0a0a8',font:{size:10},boxWidth:9,padding:7}}}}});
+  dc('cEng');charts.cEng=new Chart(document.getElementById('cEng'),{type:'bar',data:{labels,datasets:[{label:'Interacciones',data:accts.map(a=>a.interactions),backgroundColor:'#4d9eff88',borderColor:'#4d9eff',borderWidth:1,borderRadius:3},{label:'Clics',data:accts.map(a=>a.clicks),backgroundColor:'#c8f14788',borderColor:'#c8f147',borderWidth:1,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#a0a0a8',font:{size:10},boxWidth:9}}},scales:{x:{ticks:{color:'#5a5a62',font:{size:9}},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'#5a5a62',font:{size:10},callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.05)'}}}}});
+  const sorted=[...accts].sort((a,b)=>a.cpm-b.cpm);
+  const sc=sorted.map(a=>getColor(allAccts.findIndex(x=>x.account===a.account)));
+  dc('cCpm');charts.cCpm=new Chart(document.getElementById('cCpm'),{type:'bar',data:{labels:sorted.map(a=>shortName(a.account)),datasets:[{data:sorted.map(a=>+a.cpm.toFixed(3)),backgroundColor:sc.map(c=>c+'99'),borderColor:sc,borderWidth:1,borderRadius:3}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#5a5a62',font:{size:10},callback:v=>'$'+v.toFixed(2)},grid:{color:'rgba(255,255,255,0.05)'}},y:{ticks:{color:'#a0a0a8',font:{size:10}},grid:{display:false}}}}});
+  const campSorted=[...camps].sort((a,b)=>b.spent-a.spent).slice(0,6);
+  document.getElementById('topInv').innerHTML=campSorted.map(c=>`<div class="camp-item"><div><div class="camp-name">${c.campaign}</div><div class="camp-acct">${shortName(c.account)}</div></div><div><div class="camp-val">$${c.spent.toFixed(0)}</div><div class="camp-vsub">USD</div></div></div>`).join('')||'<div class="nodata">Sin campañas</div>';
+  const campAlc=[...camps].sort((a,b)=>b.reach-a.reach).slice(0,6);
+  document.getElementById('topAlc').innerHTML=campAlc.map(c=>`<div class="camp-item"><div><div class="camp-name">${c.campaign}</div><div class="camp-acct">${shortName(c.account)}</div></div><div><div class="camp-val">${fmt(c.reach)}</div><div class="camp-vsub">personas</div></div></div>`).join('')||'<div class="nodata">Sin campañas</div>';
+  const bestCPM=accts.length?accts.reduce((b,a)=>a.cpm<b.cpm?a:b):null;
+  const bestCTR=accts.length?accts.reduce((b,a)=>a.ctr>b.ctr?a:b):null;
+  const mostSpent=accts.length?accts.reduce((b,a)=>a.spent>b.spent?a:b):null;
+  const mostReach=accts.length?accts.reduce((b,a)=>a.reach>b.reach?a:b):null;
+  const bestCamp=camps.length?camps.reduce((b,c)=>c.reach>b.reach?c:b):null;
+  document.getElementById('hlGrid').innerHTML=[
+    bestCPM&&{ico:'🏆',t:'Cuenta más eficiente',v:shortName(bestCPM.account),d:`CPM $${bestCPM.cpm.toFixed(2)} · $${bestCPM.spent.toFixed(0)} invertidos`},
+    bestCTR&&{ico:'🎯',t:'Mejor CTR',v:shortName(bestCTR.account),d:`CTR ${bestCTR.ctr.toFixed(2)}% · Mayor tasa de clics`},
+    mostSpent&&{ico:'💰',t:'Mayor inversión',v:shortName(mostSpent.account),d:`$${mostSpent.spent.toFixed(0)} USD invertidos`},
+    mostReach&&{ico:'📡',t:'Mayor alcance',v:shortName(mostReach.account),d:`${fmt(mostReach.reach)} personas alcanzadas`},
+    bestCamp&&{ico:'⚡',t:'Campaña top alcance',v:bestCamp.campaign.slice(0,22),d:`${shortName(bestCamp.account)} · ${fmt(bestCamp.reach)} personas`},
+    {ico:'📍',t:'Regiones activas',v:accts.length+' cuentas',d:accts.map(a=>shortName(a.account)).join(' · ')},
+  ].filter(Boolean).map(h=>`<div class="hl"><div class="hl-ico">${h.ico}</div><div class="hl-t">${h.t}</div><div class="hl-v">${h.v}</div><div class="hl-d">${h.d}</div></div>`).join('');
+}
+
+function adsInit(){
+  buildMonthTabs();
+  if(!activeMonth&&Object.keys(db).length)activeMonth=Object.keys(db).slice(-1)[0];
+  if(activeMonth&&db[activeMonth])selectedAccts=new Set(db[activeMonth].accounts.map(a=>a.account));
+  adsRender();
+}
+
+[document.getElementById('fileInput'),document.getElementById('fileInput2')].forEach(inp=>{
+  inp&&inp.addEventListener('change',e=>{if(e.target.files[0])parseExcel(e.target.files[0]);e.target.value='';});
+});
+
+// ════════════════════════
+// ORGÁNICO CHARTS
+// ════════════════════════
+let orgRendered={};
+
+function renderOrgResumen(){
+  if(orgRendered.resumen)return;orgRendered.resumen=true;
+  dc('cOrgImpr');charts.cOrgImpr=new Chart(document.getElementById('cOrgImpr'),{type:'bar',data:{labels:['Facebook','Instagram','TikTok','YouTube'],datasets:[{data:[8710000,11120000,9564,7260],backgroundColor:['#1877f288','#e1306c88','#69c9d088','#ff585888'],borderColor:['#1877f2','#e1306c','#69c9d0','#ff5858'],borderWidth:1,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#5a5a62',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'#5a5a62',font:{size:10},callback:v=>v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?(v/1e3).toFixed(0)+'K':v},grid:{color:'rgba(255,255,255,0.05)'}}}}});
+  dc('cOrgSeg');charts.cOrgSeg=new Chart(document.getElementById('cOrgSeg'),{type:'doughnut',data:{labels:['Facebook 5.9K','Instagram 141K','TikTok 636','YouTube 581'],datasets:[{data:[5920,141140,636,581],backgroundColor:['#1877f288','#e1306c88','#69c9d088','#ff585888'],borderColor:'#161618',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:true,position:'bottom',labels:{color:'#a0a0a8',font:{size:10},boxWidth:9,padding:6}}}}});
+}
+
+function renderIG(){
+  if(orgRendered.ig)return;orgRendered.ig=true;
+  dc('cIgInter');charts.cIgInter=new Chart(document.getElementById('cIgInter'),{type:'bar',data:{labels:['Me gusta','Guardados','Comentarios','Compartidos'],datasets:[{data:[491,255,18,34],backgroundColor:['#e1306c99','#a855f799','#f59e0b99','#06b6d499'],borderColor:['#e1306c','#a855f7','#f59e0b','#06b6d4'],borderWidth:1,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#5a5a62',font:{size:11}},grid:{display:false}},y:{ticks:{color:'#5a5a62',font:{size:10}},grid:{color:'rgba(255,255,255,0.05)'}}}}});
+  dc('cIgGenero');charts.cIgGenero=new Chart(document.getElementById('cIgGenero'),{type:'doughnut',data:{labels:['Mujer 51.13%','Hombre 40.25%','Desconocido'],datasets:[{data:[51.13,40.25,8.62],backgroundColor:['#e1306c88','#1877f288','#44444444'],borderColor:'#161618',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{display:true,position:'bottom',labels:{color:'#a0a0a8',font:{size:10},boxWidth:9,padding:6}}}}});
+  dc('cIgPaises');charts.cIgPaises=new Chart(document.getElementById('cIgPaises'),{type:'bar',indexAxis:'y',data:{labels:['Colombia','Panamá','Venezuela','Costa Rica','Guatemala','R.Dom.','Ecuador','Paraguay','El Salvador','Argentina'],datasets:[{data:[31.34,13.21,10.62,7.84,5.72,4.95,4.89,4.48,3.65,2.39],backgroundColor:'#e1306c88',borderColor:'#e1306c',borderWidth:1,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#5a5a62',font:{size:10},callback:v=>v+'%'},grid:{color:'rgba(255,255,255,0.05)'}},y:{ticks:{color:'#a0a0a8',font:{size:10}},grid:{display:false}}}}});
+  dc('cIgEdades');charts.cIgEdades=new Chart(document.getElementById('cIgEdades'),{type:'bar',data:{labels:['13-17','18-24','25-34','35-44','45-54','55-64','65+'],datasets:[{data:[0.5,5.5,34,39,16,4,1],backgroundColor:'#e1306c77',borderColor:'#e1306c',borderWidth:1,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#5a5a62',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'#5a5a62',font:{size:10},callback:v=>v+'%'},grid:{color:'rgba(255,255,255,0.05)'}}}}});
+}
+
+function renderFB(){
+  if(orgRendered.fb)return;orgRendered.fb=true;
+  dc('cFbPaises');charts.cFbPaises=new Chart(document.getElementById('cFbPaises'),{type:'bar',indexAxis:'y',data:{labels:['Colombia','Venezuela','Ecuador','Costa Rica','El Salvador','Paraguay','Guatemala','Honduras','España','Panamá'],datasets:[{data:[78.55,9.93,3.82,1.79,1.23,1.17,1.00,0.86,0.44,0.39],backgroundColor:'#1877f288',borderColor:'#1877f2',borderWidth:1,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#5a5a62',font:{size:10},callback:v=>v+'%'},grid:{color:'rgba(255,255,255,0.05)'}},y:{ticks:{color:'#a0a0a8',font:{size:10}},grid:{display:false}}}}});
+}
+
+function renderTT(){
+  if(orgRendered.tt)return;orgRendered.tt=true;
+  dc('cTtGenero');charts.cTtGenero=new Chart(document.getElementById('cTtGenero'),{type:'doughnut',data:{labels:['Hombre 55%','Mujer 45%'],datasets:[{data:[55,45],backgroundColor:['#69c9d088','#e1306c88'],borderColor:'#161618',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{display:true,position:'bottom',labels:{color:'#a0a0a8',font:{size:10},boxWidth:9,padding:6}}}}});
+  dc('cTtPaises');charts.cTtPaises=new Chart(document.getElementById('cTtPaises'),{type:'bar',indexAxis:'y',data:{labels:['Panamá','Guatemala','Argentina','Costa Rica','México','Colombia','Ecuador','Venezuela','El Salvador'],datasets:[{data:[11.87,10.44,7.44,7.44,6.96,6.33,6.33,4.11,3.80],backgroundColor:'#69c9d088',borderColor:'#69c9d0',borderWidth:1,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#5a5a62',font:{size:9},callback:v=>v+'%'},grid:{color:'rgba(255,255,255,0.05)'}},y:{ticks:{color:'#a0a0a8',font:{size:10}},grid:{display:false}}}}});
+}
+
+function renderYT(){
+  if(orgRendered.yt)return;orgRendered.yt=true;
+  dc('cYtTrafico');charts.cYtTrafico=new Chart(document.getElementById('cYtTrafico'),{type:'bar',indexAxis:'y',data:{labels:['Shorts','Búsqueda YouTube','Canales YouTube','Listas reprod.','Fuentes externas','Exploración'],datasets:[{data:[82.85,11.63,2.57,1.13,0.92,0.43],backgroundColor:'#ff585888',borderColor:'#ff5858',borderWidth:1,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#5a5a62',font:{size:10},callback:v=>v+'%'},grid:{color:'rgba(255,255,255,0.05)'}},y:{ticks:{color:'#a0a0a8',font:{size:10}},grid:{display:false}}}}});
+}
+
+function renderComp(){
+  if(orgRendered.comp)return;orgRendered.comp=true;
+  const compLabels=['Nike','Reebok','UA LATAM','Everlast','Nike LA','Adidas PA','Reebok Latam','Reebok PA'];
+  const engData=[0.02,0.11,0.08,1.36,0.58,0.73,0.01,5.92];
+  const engColors=engData.map((v,i)=>i===3?'#c8f14788':v>=1?'#4d9eff88':'#5a5a6288');
+  const engBorder=engData.map((v,i)=>i===3?'#c8f147':v>=1?'#4d9eff':'#5a5a62');
+  dc('cCompEng');charts.cCompEng=new Chart(document.getElementById('cCompEng'),{type:'bar',data:{labels:compLabels,datasets:[{data:engData,backgroundColor:engColors,borderColor:engBorder,borderWidth:1,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#5a5a62',font:{size:9}},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'#5a5a62',font:{size:10},callback:v=>v+'%'},grid:{color:'rgba(255,255,255,0.05)'}}}}});
+  dc('cCompSeg');charts.cCompSeg=new Chart(document.getElementById('cCompSeg'),{type:'bar',indexAxis:'y',data:{labels:['Everlast','Nike LA','Adidas PA','Reebok Latam','EverlastLatino','Reebok PA'],datasets:[{data:[545870,439200,180420,131840,112710,78290],backgroundColor:['#c8f14788','#4d9eff55','#4d9eff55','#4d9eff55','#4d9eff55','#4d9eff55'],borderColor:['#c8f147','#4d9eff','#4d9eff','#4d9eff','#4d9eff','#4d9eff'],borderWidth:1,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#5a5a62',font:{size:9},callback:v=>v>=1e3?(v/1e3).toFixed(0)+'K':v},grid:{color:'rgba(255,255,255,0.05)'}},y:{ticks:{color:'#a0a0a8',font:{size:10}},grid:{display:false}}}}});
+}
+
+// ── BOOT ──
+loadDB();
+adsInit();
+</script>
+</body>
+</html>
