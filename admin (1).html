@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Everlast — Admin</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#f8f8f6;--bg2:#fff;--bg3:#f2f2ef;--border:#e5e5e0;--border2:#d0d0ca;--text:#1a1a1a;--text2:#5a5a5a;--text3:#999;--accent:#1a3a2a;--red:#dc2626;--green:#16a34a;--r:8px;--r2:12px;font-family:'DM Sans',system-ui,sans-serif}
+body{background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;min-height:100vh}
+.hdr{background:var(--accent);padding:0 28px;display:flex;align-items:center;gap:16px;height:54px}
+.logo{color:#c8f147;font-weight:700;font-size:13px;letter-spacing:.5px}
+.hdr-title{color:rgba(255,255,255,.7);font-size:14px;flex:1}
+.badge{background:rgba(200,241,71,.2);color:#c8f147;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px}
+.main{max-width:900px;margin:0 auto;padding:32px 24px;display:flex;flex-direction:column;gap:24px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden}
+.card-head{padding:16px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.card-title{font-size:14px;font-weight:600}
+.card-sub{font-size:11px;color:var(--text3);margin-top:1px}
+.card-body{padding:20px 22px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:11px;font-weight:600;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+.field input,.field select,.field textarea{width:100%;padding:8px 11px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;color:var(--text);background:#fff;font-family:inherit}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--accent)}
+.field textarea{min-height:60px;resize:vertical}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.upload-zone{border:2px dashed var(--border2);border-radius:var(--r2);padding:28px;text-align:center;cursor:pointer;transition:all .15s;background:var(--bg3)}
+.upload-zone:hover{border-color:var(--accent);background:#e8f5e9}
+.upload-zone input{display:none}
+.btn{padding:9px 18px;border-radius:var(--r);font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:all .15s}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{opacity:.88}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed}
+.btn-sm{font-size:11px;padding:5px 10px}
+.btn-danger{background:transparent;color:var(--red);border:1px solid var(--red)}
+.btn-danger:hover{background:#fef2f2}
+.toast{position:fixed;bottom:24px;right:24px;padding:11px 16px;border-radius:var(--r);font-size:13px;font-weight:500;z-index:999;transform:translateY(60px);opacity:0;transition:all .25s}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.ok{background:#16a34a;color:#fff}
+.toast.err{background:#dc2626;color:#fff}
+.pitem{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border)}
+.pitem:last-child{border-bottom:none}
+.net-tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.nt{padding:5px 13px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border2);color:var(--text2);transition:all .12s}
+.nt.active[data-r="instagram"]{color:#e1306c;background:#fdf2f8;border-color:#e1306c}
+.nt.active[data-r="facebook"]{color:#1877f2;background:#eff6ff;border-color:#1877f2}
+.nt.active[data-r="tiktok"]{color:#0d9488;background:#f0fdfa;border-color:#0d9488}
+.nt.active[data-r="youtube"]{color:#dc2626;background:#fef2f2;border-color:#dc2626}
+.sep{height:1px;background:var(--border);margin:16px 0}
+.preview-box{background:var(--bg3);border-radius:var(--r);padding:12px 14px;font-size:13px;line-height:1.8}
+.progress{height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:10px;display:none}
+.progress-bar{height:100%;background:var(--accent);border-radius:2px;transition:width .3s}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <div class="logo">EVERLAST</div>
+  <div class="hdr-title">Panel de Administración</div>
+  <div class="badge">ADMIN</div>
+</div>
+<div class="main">
+
+  <!-- PERÍODOS -->
+  <div class="card">
+    <div class="card-head"><span style="font-size:18px">📅</span><div><div class="card-title">Períodos cargados</div><div class="card-sub">Meses disponibles en el sistema</div></div></div>
+    <div class="card-body"><div id="periodList">Cargando...</div></div>
+  </div>
+
+  <!-- META ADS -->
+  <div class="card">
+    <div class="card-head"><span style="font-size:18px">📊</span><div><div class="card-title">Cargar Meta Ads</div><div class="card-sub">Excel exportado de Meta Business Suite</div></div></div>
+    <div class="card-body">
+      <label class="upload-zone" id="adsZone">
+        <input type="file" accept=".xlsx,.xls" id="adsFile">
+        <div style="font-size:28px;margin-bottom:6px">📁</div>
+        <div style="font-size:13px;font-weight:500;color:var(--text2)">Arrastrá o hacé click para seleccionar el Excel</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:3px">.xlsx exportado de Meta</div>
+      </label>
+      <div class="progress" id="adsProgress"><div class="progress-bar" id="adsBar" style="width:0%"></div></div>
+      <div id="adsPreview" style="margin-top:14px;display:none">
+        <div class="preview-box" id="adsPreviewContent"></div>
+        <button class="btn btn-primary" id="adsSaveBtn" style="margin-top:12px" onclick="saveAds()">Guardar en Supabase</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ORGÁNICO -->
+ <div id="o_extra_wrap"></div>
+ <div class="card">
+  <div class="card-head">
+    <span style="font-size:18px">📄</span>
+    <div>
+      <div class="card-title">Metricool automático</div>
+      <div class="card-sub">Subí el PDF y se cargan las métricas solas</div>
+    </div>
+  </div>
+
+  <div class="card-body">
+    <label class="upload-zone">
+      <input type="file" accept=".pdf" id="pdfFile">
+      <div style="font-size:28px;margin-bottom:6px">📄</div>
+      <div>Subir PDF de Metricool</div>
+    </label>
+
+    <div id="pdfPreview" style="margin-top:14px;display:none">
+      <div class="preview-box" id="pdfContent"></div>
+      <button class="btn btn-primary" onclick="saveMetricool()">Guardar métricas</button>
+    </div>
+  </div>
+</div>
+  <!-- TOP POSTS -->
+  <div class="card">
+    <div class="card-head"><span style="font-size:18px">🖼️</span><div><div class="card-title">Top posts del mes</div><div class="card-sub">Agregá posts con URL para mostrarlos en el reporte</div></div></div>
+    <div class="card-body">
+      <div class="row2">
+        <div class="field"><label>Período</label><select id="postPer"><option value="">Seleccionar...</option></select></div>
+        <div class="field"><label>Red social</label>
+          <select id="postRed"><option value="instagram">Instagram</option><option value="facebook">Facebook</option><option value="tiktok">TikTok</option><option value="youtube">YouTube</option></select>
+        </div>
+      </div>
+      <div class="field"><label>URL del post</label><input type="url" id="p_url" placeholder="https://www.instagram.com/p/xxxxx/"></div>
+      <div class="field"><label>URL de imagen/miniatura (opcional)</label><input type="url" id="p_img" placeholder="https://..."></div>
+      <div class="field"><label>Texto del post</label><textarea id="p_txt" placeholder="Cada paso cuenta..."></textarea></div>
+      <div class="row3">
+        <div class="field"><label>Alcance</label><input type="number" id="p_alc" placeholder="4664"></div>
+        <div class="field"><label>Likes</label><input type="number" id="p_lik" placeholder="84"></div>
+        <div class="field"><label>Guardados</label><input type="number" id="p_gua" placeholder="65"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Engagement</label><input type="number" step="0.01" id="p_eng" placeholder="3.49"></div>
+        <div class="field"><label>Fecha publicación</label><input type="date" id="p_fecha"></div>
+      </div>
+      <button class="btn btn-primary" onclick="savePost()">Agregar post</button>
+      <div class="sep"></div>
+      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">Posts guardados</div>
+      <div id="postList" style="font-size:13px;color:var(--text3)">Seleccioná un período</div>
+    </div>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const SB='https://mldhrifnmfrerlqcmlmt.supabase.co';
+const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1sZGhyaWZubWZyZXJscWNtbG10Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2NTYwMzAsImV4cCI6MjA5MTIzMjAzMH0.Nw89EK4DfZAoHVujgZDYrVnq7ZAYl-t_k7Y1jtWqxH8';
+const H={apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json',Prefer:'return=minimal'};
+const Hg={apikey:KEY,Authorization:'Bearer '+KEY};
+let net='instagram',adsData=null;
+function toast(m,t='ok'){const e=document.getElementById('toast');e.textContent=m;e.className='toast show '+t;setTimeout(()=>e.className='toast',3000);}
+async function get(tbl,q=''){const r=await fetch(`${SB}/rest/v1/${tbl}?${q}`,{headers:Hg});if(!r.ok)throw new Error(await r.text());return r.json();}
+async function ins(tbl,d){const r=await fetch(`${SB}/rest/v1/${tbl}`,{method:'POST',headers:H,body:JSON.stringify(d)});if(!r.ok)throw new Error(await r.text());}
+async function del(tbl,f){const r=await fetch(`${SB}/rest/v1/${tbl}?${f}`,{method:'DELETE',headers:H});if(!r.ok)throw new Error(await r.text());}
+const n=v=>typeof v==='number'?v:parseFloat(v)||0;
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+async function loadPeriodos(){
+  try{
+    const a=await get('reportes_ads','select=periodo&es_total=eq.true');
+    const b=await get('reportes_organico','select=periodo');
+    const all=[...new Set([...a.map(r=>r.periodo),...b.map(r=>r.periodo)])].sort().reverse();
+    ['orgPeriodo','postPer'].forEach(id=>{
+      const s=document.getElementById(id);const cv=s.value;
+      s.innerHTML='<option value="">Seleccionar...</option>';
+      all.forEach(p=>s.insertAdjacentHTML('beforeend',`<option value="${p}">${p}</option>`));
+      if(cv)s.value=cv;
+    });
+    const el=document.getElementById('periodList');
+    if(!all.length){el.innerHTML='<div style="color:var(--text3)">Sin períodos aún</div>';return;}
+    el.innerHTML=all.map(p=>`<div class="pitem"><div><div style="font-weight:500">${p}</div></div><button class="btn btn-danger btn-sm" onclick="delPeriodo('${p}')">Eliminar</button></div>`).join('');
+  }catch(e){document.getElementById('periodList').textContent='Error: '+e.message;}
+}
+
+async function delPeriodo(p){
+  if(!confirm(`¿Eliminar "${p}"?`))return;
+  try{
+    await del('reportes_ads',`periodo=eq.${encodeURIComponent(p)}`);
+    await del('reportes_organico',`periodo=eq.${encodeURIComponent(p)}`);
+    await del('top_posts',`periodo=eq.${encodeURIComponent(p)}`);
+    toast(`"${p}" eliminado`);loadPeriodos();
+  }catch(e){toast('Error: '+e.message,'err');}
+}
+
+function selNet(r){
+  net=r;
+  document.querySelectorAll('.nt').forEach(t=>t.classList.toggle('active',t.dataset.r===r));
+  const w=document.getElementById('o_extra_wrap');
+  if(r==='youtube')w.innerHTML='<label>Suscriptores ganados</label><input type="number" id="o_extra" placeholder="17">';
+  else if(r==='tiktok')w.innerHTML='<label>Visitas al perfil</label><input type="number" id="o_extra" placeholder="128">';
+  else w.innerHTML='<label>Historias</label><input type="number" id="o_extra" placeholder="259">';
+}
+
+async function saveOrg(){
+  const per=document.getElementById('orgNuevo').value.trim()||document.getElementById('orgPeriodo').value;
+  if(!per){toast('Indicá un período','err');return;}
+  try{
+    await del('reportes_organico',`periodo=eq.${encodeURIComponent(per)}&red=eq.${net}`);
+    await ins('reportes_organico',{periodo:per,red:net,seguidores:+document.getElementById('o_seg').value||0,nuevos_seguidores:+document.getElementById('o_new').value||0,publicaciones:+document.getElementById('o_pub').value||0,impresiones:+document.getElementById('o_imp').value||0,alcance_promedio:+document.getElementById('o_alc').value||0,interacciones:+document.getElementById('o_int').value||0,engagement:+document.getElementById('o_eng').value||0});
+    toast(`${net} — ${per} guardado ✓`);loadPeriodos();
+    ['o_seg','o_new','o_pub','o_imp','o_alc','o_int','o_eng'].forEach(id=>document.getElementById(id).value='');
+  }catch(e){toast('Error: '+e.message,'err');}
+}
+
+async function savePost(){
+  const per=document.getElementById('postPer').value;if(!per){toast('Seleccioná período','err');return;}
+  try{
+    await ins('top_posts',{periodo:per,red:document.getElementById('postRed').value,url_post:document.getElementById('p_url').value||null,url_imagen:document.getElementById('p_img').value||null,texto:document.getElementById('p_txt').value||null,alcance:+document.getElementById('p_alc').value||0,likes:+document.getElementById('p_lik').value||0,guardados:+document.getElementById('p_gua').value||0,engagement:+document.getElementById('p_eng').value||0,fecha_publicacion:document.getElementById('p_fecha').value||null});
+    toast('Post agregado ✓');['p_url','p_img','p_txt','p_alc','p_lik','p_gua','p_eng','p_fecha'].forEach(id=>document.getElementById(id).value='');loadPostList();
+  }catch(e){toast('Error: '+e.message,'err');}
+}
+
+async function loadPostList(){
+  const per=document.getElementById('postPer').value;const el=document.getElementById('postList');
+  if(!per){el.textContent='Seleccioná un período';return;}
+  try{
+    const posts=await get('top_posts',`periodo=eq.${encodeURIComponent(per)}&order=created_at.desc`);
+    if(!posts.length){el.textContent='Sin posts para este período';return;}
+    el.innerHTML=posts.map(p=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">${p.url_imagen?`<img src="${p.url_imagen}" style="width:36px;height:36px;border-radius:5px;object-fit:cover" onerror="this.style.display='none'">`:'<div style="width:36px;height:36px;background:var(--bg3);border-radius:5px;display:flex;align-items:center;justify-content:center">🖼️</div>'}<div style="flex:1"><div style="font-size:12px;font-weight:500">${(p.texto||'Sin texto').slice(0,55)}...</div><div style="font-size:11px;color:var(--text3)">${p.red} · ${p.alcance?.toLocaleString()} alcance · ${p.likes} likes</div></div><button onclick="delPost('${p.id}')" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:18px">×</button></div>`).join('');
+  }catch(e){el.textContent='Error: '+e.message;}
+}
+
+async function delPost(id){try{await del('top_posts',`id=eq.${id}`);toast('Eliminado');loadPostList();}catch(e){toast(e.message,'err');}}
+document.getElementById('postPer').addEventListener('change',loadPostList);
+
+// Excel parse
+function parseExcel(file){
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array'});
+      const sn=wb.SheetNames.find(s=>s.toLowerCase().includes('raw'))||wb.SheetNames[0];
+      const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,defval:''});
+      let hr=-1;for(let i=0;i<rows.length;i++){if(rows[i].some(c=>c&&c.toString().toLowerCase().includes('nombre de la cuenta'))){hr=i;break;}}
+      if(hr===-1){toast('Encabezado no encontrado','err');return;}
+      const h=rows[hr].map(c=>(c||'').toString().toLowerCase().trim());
+      const ci=k=>h.findIndex(x=>x.includes(k));
+      const iA=ci('nombre de la cuenta'),iC=ci('nombre de la campaña'),iR=ci('alcance'),iI=ci('impresiones'),iS=ci('importe gastado'),iM=ci('cpm'),iN=ci('interacciones con la publicación'),iV=ci('reproducciones de video'),iK=ci('clics en el enlace'),iT=ci('ctr'),iD=ci('inicio del informe');
+      const dr=rows.slice(hr+1).filter(r=>r[iA]&&r[iA].toString().trim());
+      let per='Sin fecha';
+      if(dr.length&&dr[0][iD]){const raw=dr[0][iD].toString().trim();const pts=raw.slice(0,10).split('-');const ms=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];if(pts.length===3&&ms[+pts[1]-1])per=ms[+pts[1]-1]+' '+pts[0];}
+      const recs=dr.map(r=>({periodo:per,cuenta:r[iA].toString().trim(),campana:(r[iC]||'').toString().trim(),es_total:(r[iC]||'').toString().trim().toLowerCase()==='all',spent:n(r[iS]),reach:n(r[iR]),impressions:n(r[iI]),interactions:n(r[iN]),video_views:n(r[iV]),clicks:n(r[iK]),cpm:n(r[iM]),ctr:n(r[iT])}));
+      adsData={periodo:per,records:recs};
+      const tots=recs.filter(r=>r.es_total);
+      document.getElementById('adsPreviewContent').innerHTML=`<div><strong>Período:</strong> ${per}</div><div><strong>Filas:</strong> ${recs.length} · <strong>Cuentas:</strong> ${tots.length}</div><div><strong>Inversión total:</strong> $${tots.reduce((s,r)=>s+r.spent,0).toFixed(0)} USD</div><div><strong>Alcance total:</strong> ${tots.reduce((s,r)=>s+r.reach,0).toLocaleString()}</div>`;
+      document.getElementById('adsPreview').style.display='block';
+    }catch(e){toast('Error leyendo Excel: '+e.message,'err');}
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+async function saveAds(){
+  if(!adsData)return;
+  const btn=document.getElementById('adsSaveBtn');btn.disabled=true;btn.textContent='Guardando...';
+  const prog=document.getElementById('adsProgress');prog.style.display='block';
+  const bar=document.getElementById('adsBar');
+  try{
+    await del('reportes_ads',`periodo=eq.${encodeURIComponent(adsData.periodo)}`);
+    const chunks=[];for(let i=0;i<adsData.records.length;i+=50)chunks.push(adsData.records.slice(i,i+50));
+    for(let i=0;i<chunks.length;i++){await ins('reportes_ads',chunks[i]);bar.style.width=((i+1)/chunks.length*100)+'%';}
+    toast(`"${adsData.periodo}" guardado ✓`);document.getElementById('adsPreview').style.display='none';adsData=null;loadPeriodos();
+  }catch(e){toast('Error: '+e.message,'err');}
+  btn.disabled=false;btn.textContent='Guardar en Supabase';prog.style.display='none';bar.style.width='0%';
+}
+
+document.getElementById('adsFile').addEventListener('change',e=>{if(e.target.files[0])parseExcel(e.target.files[0]);});
+const z=document.getElementById('adsZone');
+z.addEventListener('dragover',e=>{e.preventDefault();z.style.borderColor='var(--accent)';z.style.background='#e8f5e9';});
+z.addEventListener('dragleave',()=>{z.style.borderColor='';z.style.background='';});
+z.addEventListener('drop',e=>{e.preventDefault();z.style.borderColor='';z.style.background='';if(e.dataTransfer.files[0])parseExcel(e.dataTransfer.files[0]);});
+
+selNet('instagram');
+loadPeriodos();
+
+  let metricoolData = null;
+
+function parseMetricool(text){
+
+  function getValue(label){
+    const regex = new RegExp(label + "\\s*(\\d+[\\.,]?\\d*)","i");
+    const match = text.match(regex);
+    return match ? parseFloat(match[1].replace(",","")) : 0;
+  }
+
+  const seguidores = getValue("Followers");
+  const impresiones = getValue("Impressions");
+  const alcance = getValue("Reach");
+  const engagement = getValue("Engagement");
+
+  const meses = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+  let periodo = "Sin período";
+
+  meses.forEach(m=>{
+    if(text.includes(m)){
+      periodo = m + " 2026";
+    }
+  });
+
+  metricoolData = {
+    periodo,
+    seguidores,
+    impresiones,
+    alcance,
+    engagement
+  };
+
+  document.getElementById('pdfContent').innerHTML = `
+    <strong>Periodo:</strong> ${periodo}<br>
+    <strong>Seguidores:</strong> ${seguidores}<br>
+    <strong>Impresiones:</strong> ${impresiones}<br>
+    <strong>Alcance:</strong> ${alcance}<br>
+    <strong>Engagement:</strong> ${engagement}%
+  `;
+
+  document.getElementById('pdfPreview').style.display='block';
+}
+
+
+async function saveMetricool(){
+  if(!metricoolData) return;
+
+  const p = metricoolData.periodo;
+
+  try{
+    await del('reportes_organico',`periodo=eq.${encodeURIComponent(p)}&red=eq.instagram`);
+
+    await ins('reportes_organico',{
+      periodo:p,
+      red:'instagram',
+      seguidores:metricoolData.seguidores,
+      nuevos_seguidores:0,
+      publicaciones:0,
+      impresiones:metricoolData.impresiones,
+      alcance_promedio:metricoolData.alcance,
+      interacciones:0,
+      engagement:metricoolData.engagement
+    });
+
+    toast("Metricool cargado automático ✓");
+    loadPeriodos();
+
+  }catch(e){
+    toast("Error: "+e.message,"err");
+  }
+}
+
+
+document.getElementById('pdfFile').addEventListener('change', async (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+
+  const reader = new FileReader();
+
+  reader.onload = async function(){
+    const typedArray = new Uint8Array(this.result);
+    const pdf = await pdfjsLib.getDocument(typedArray).promise;
+
+    let text = "";
+
+    for(let i=1;i<=pdf.numPages;i++){
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      text += content.items.map(i=>i.str).join(" ");
+    }
+
+    parseMetricool(text);
+  };
+
+  reader.readAsArrayBuffer(file);
+});
+</script>
+</body>
+</html>
