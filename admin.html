@@ -238,22 +238,53 @@ const n=v=>typeof v==="number"?v:parseFloat(v)||0;
 
 async function loadPeriodos(){
   try{
-    const safe = async (fn) => { try{ return await fn(); }catch(e){ console.warn('Table error:', e.message); return []; } };
+    const safe = async (fn) => {
+      try{ return await fn(); }
+      catch(e){ console.warn('Table error:', e.message); return []; }
+    };
+
     const a=await safe(()=>get("reportes_ads","select=periodo&es_total=eq.true"));
     const b=await safe(()=>get("reportes_organico","select=periodo"));
     const c=await safe(()=>get("embajadores","select=periodo"));
-    const all=[...new Set([...a.map(r=>r.periodo),...b.map(r=>r.periodo),...c.map(r=>r.periodo)])].sort().reverse();
+
+    // ✅ FIX CLAVE
+    const all = [...new Set([
+      ...a.map(r=>r.periodo),
+      ...b.map(r=>r.periodo),
+      ...c.map(r=>r.periodo)
+    ])].sort().reverse();
+
     ["pdfPeriodo","postPer","embPeriodo"].forEach(id=>{
-      const s=document.getElementById(id);const cv=s.value;
+      const s=document.getElementById(id);
+      const cv=s.value;
+
       s.innerHTML="<option value=''>Seleccionar...</option>";
-      all.forEach(p=>s.insertAdjacentHTML("beforeend",`<option value="${p}">${p}</option>`));
-      if(cv)s.value=cv;
+      all.forEach(p=>{
+        s.insertAdjacentHTML("beforeend",`<option value="${p}">${p}</option>`);
+      });
+
+      if(cv) s.value=cv;
     });
+
     const el=document.getElementById("periodList");
-    if(!all.length){el.innerHTML="<div style=\"color:var(--text3)\">Sin períodos aún</div>";return;}
-    el.innerHTML=all.map(p=>`<div class="pitem"><div><div style="font-weight:500">${p}</div></div><button class="btn btn-danger btn-sm" onclick="delPeriodo(\'${p}\')">Eliminar</button></div>`).join("");
-  }catch(e){document.getElementById("periodList").textContent="Error: "+e.message;}
+
+    if(!all.length){
+      el.innerHTML="<div style='color:var(--text3)'>Sin períodos aún</div>";
+      return;
+    }
+
+    el.innerHTML = all.map(p=>`
+      <div class="pitem">
+        <div><div style="font-weight:500">${p}</div></div>
+        <button class="btn btn-danger btn-sm" onclick="delPeriodo('${p}')">Eliminar</button>
+      </div>
+    `).join("");
+
+  }catch(e){
+    document.getElementById("periodList").textContent="Error: "+e.message;
+  }
 }
+
 
 async function delPeriodo(p){
   if(!confirm(`¿Eliminar "${p}"?`))return;
