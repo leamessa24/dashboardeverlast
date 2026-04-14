@@ -329,12 +329,30 @@ async function init(){
   try{
     const a=await get('reportes_ads','select=periodo&es_total=eq.true');
     const b=await get('reportes_organico','select=periodo');
-    allPers=[...new Set([...a.map(r=>r.periodo),...b.map(r=>r.periodo)])].sort().reverse();
+
+    // ✅ FIX CLAVE
+    allPers = [...new Set([
+      ...a.map(r=>r.periodo),
+      ...b.map(r=>r.periodo)
+    ])].sort().reverse();
+
     const s=document.getElementById('perSel');s.innerHTML='';
-    if(!allPers.length){s.innerHTML='<option>Sin datos</option>';return;}
-    allPers.forEach(p=>s.insertAdjacentHTML('beforeend',`<option value="${p}">${p}</option>`));
-    aper=allPers[0];document.getElementById('hdrSub').textContent=`Everlast Latino · ${aper}`;loadAll();
-  }catch(e){console.error(e);}
+    if(!allPers.length){
+      s.innerHTML='<option>Sin datos</option>';
+      return;
+    }
+
+    allPers.forEach(p=>{
+      s.insertAdjacentHTML('beforeend',`<option value="${p}">${p}</option>`);
+    });
+
+    aper=allPers[0];
+    document.getElementById('hdrSub').textContent=`Everlast Latino · ${aper}`;
+    loadAll();
+
+  }catch(e){
+    console.error(e);
+  }
 }
 function changePer(p){aper=p;document.getElementById('hdrSub').textContent=`Everlast Latino · ${p}`;loadAll();}
 function loadAll(){loadAds();const m=document.querySelector('.module.active');if(m.id==='mod-org')loadOrg();if(m.id==='mod-posts')loadPosts();if(m.id==='mod-evo')loadEvo();}
