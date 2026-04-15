@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Everlast — Admin</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#f8f8f6;--bg2:#fff;--bg3:#f2f2ef;--border:#e5e5e0;--border2:#d0d0ca;--text:#1a1a1a;--text2:#5a5a5a;--text3:#999;--accent:#1a3a2a;--lime:#c8f147;--red:#dc2626;--green:#16a34a;--amber:#d97706;--r:8px;--r2:12px;font-family:"DM Sans",system-ui,sans-serif}
+body{background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;min-height:100vh}
+.hdr{background:var(--accent);padding:0 28px;display:flex;align-items:center;gap:16px;height:54px}
+.logo{color:var(--lime);font-weight:700;font-size:13px;letter-spacing:.5px}
+.hdr-title{color:rgba(255,255,255,.7);font-size:14px;flex:1}
+.badge{background:rgba(200,241,71,.2);color:var(--lime);font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px}
+.main{max-width:960px;margin:0 auto;padding:32px 24px;display:flex;flex-direction:column;gap:24px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden}
+.card-head{padding:16px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.card-title{font-size:14px;font-weight:600}
+.card-sub{font-size:11px;color:var(--text3);margin-top:1px}
+.card-body{padding:20px 22px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:11px;font-weight:600;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+.field input,.field select,.field textarea{width:100%;padding:8px 11px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;color:var(--text);background:#fff;font-family:inherit}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--accent)}
+.field textarea{min-height:60px;resize:vertical}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.upload-zone{border:2px dashed var(--border2);border-radius:var(--r2);padding:28px;text-align:center;cursor:pointer;transition:all .15s;background:var(--bg3)}
+.upload-zone:hover{border-color:var(--accent);background:#e8f5e9}
+.upload-zone input{display:none}
+.btn{padding:9px 18px;border-radius:var(--r);font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:all .15s}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{opacity:.88}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed}
+.btn-sm{font-size:11px;padding:5px 10px}
+.btn-danger{background:transparent;color:var(--red);border:1px solid var(--red)}
+.btn-danger:hover{background:#fef2f2}
+.btn-ai{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;display:flex;align-items:center;gap:7px}
+.btn-ai:hover{opacity:.88}
+.toast{position:fixed;bottom:24px;right:24px;padding:11px 16px;border-radius:var(--r);font-size:13px;font-weight:500;z-index:999;transform:translateY(60px);opacity:0;transition:all .25s}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.ok{background:#16a34a;color:#fff}
+.toast.err{background:#dc2626;color:#fff}
+.toast.info{background:#6366f1;color:#fff}
+.pitem{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border)}
+.pitem:last-child{border-bottom:none}
+.net-tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.nt{padding:5px 13px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border2);color:var(--text2);transition:all .12s}
+.nt.active[data-r="instagram"]{color:#e1306c;background:#fdf2f8;border-color:#e1306c}
+.nt.active[data-r="facebook"]{color:#1877f2;background:#eff6ff;border-color:#1877f2}
+.nt.active[data-r="tiktok"]{color:#0d9488;background:#f0fdfa;border-color:#0d9488}
+.nt.active[data-r="youtube"]{color:#dc2626;background:#fef2f2;border-color:#dc2626}
+.sep{height:1px;background:var(--border);margin:16px 0}
+.preview-box{background:var(--bg3);border-radius:var(--r);padding:12px 14px;font-size:13px;line-height:1.8}
+.progress{height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:10px;display:none}
+.progress-bar{height:100%;background:var(--accent);border-radius:2px;transition:width .3s}
+.ai-status{background:#f0f0ff;border:1px solid #c7d2fe;border-radius:var(--r);padding:12px 16px;font-size:13px;color:#4338ca;display:none;align-items:center;gap:10px;margin-top:12px}
+.ai-spinner{width:18px;height:18px;border:2px solid #c7d2fe;border-top-color:#6366f1;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ai-results{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:var(--r);padding:14px 16px;margin-top:12px;display:none}
+.ai-results-title{font-size:12px;font-weight:600;color:#15803d;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.ai-net-block{border:1px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:10px;background:#fff}
+.ai-net-title{font-size:12px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.ai-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.ai-field{display:flex;flex-direction:column;gap:2px}
+.ai-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px}
+.ai-val{font-size:13px;font-weight:600;color:var(--text)}
+.confirm-bar{display:flex;gap:10px;margin-top:14px;align-items:center}
+.note{font-size:11px;color:var(--text3);flex:1}
+
+</style>
+</head>
+<body>
+
+
+<div class="hdr">
+  <div class="logo">EVERLAST</div>
+  <div class="hdr-title">Panel de Administración</div>
+  <a href="/" style="font-size:11px;color:rgba(255,255,255,.6);text-decoration:none;padding:5px 12px;border:1px solid rgba(255,255,255,.2);border-radius:6px;white-space:nowrap" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">← Dashboard</a><button onclick="sessionStorage.removeItem('ev_admin_auth');location.reload()" style="font-size:11px;color:rgba(255,255,255,.5);background:transparent;border:1px solid rgba(255,255,255,.2);padding:4px 10px;border-radius:6px;cursor:pointer;font-family:inherit">Cerrar sesión</button><div class="badge">ADMIN</div>
+</div>
+<div class="main">
+
+  <!-- PERÍODOS -->
+  <div class="card">
+    <div class="card-head"><span style="font-size:18px">📅</span><div><div class="card-title">Períodos cargados</div><div class="card-sub">Meses disponibles en el sistema</div></div></div>
+    <div class="card-body"><div id="periodList">Cargando...</div></div>
+  </div>
+
+  <!-- META ADS -->
+  <div class="card">
+    <div class="card-head"><span style="font-size:18px">📊</span><div><div class="card-title">Cargar Meta Ads</div><div class="card-sub">Excel exportado de Meta Business Suite — se parsea automáticamente</div></div></div>
+    <div class="card-body">
+      <label class="upload-zone" id="adsZone">
+        <input type="file" accept=".xlsx,.xls" id="adsFile">
+        <div style="font-size:28px;margin-bottom:6px">📁</div>
+        <div style="font-size:13px;font-weight:500;color:var(--text2)">Arrastrá o hacé click para seleccionar el Excel de Meta Ads</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:3px">.xlsx exportado de Meta Business Suite</div>
+      </label>
+      <div class="progress" id="adsProgress"><div class="progress-bar" id="adsBar" style="width:0%"></div></div>
+      <div id="adsPreview" style="margin-top:14px;display:none">
+        <div class="preview-box" id="adsPreviewContent"></div>
+        <button class="btn btn-primary" id="adsSaveBtn" style="margin-top:12px" onclick="saveAds()">Guardar en Supabase</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- METRICOOL PDF -->
+  <div class="card">
+    <div class="card-head"><span style="font-size:18px">🤖</span><div><div class="card-title">Cargar reporte Metricool</div><div class="card-sub">Subí el PDF — se leen las métricas automáticamente sin ninguna llamada externa</div></div></div>
+    <div class="card-body">
+      <div class="row2" style="margin-bottom:14px">
+        <div class="field">
+          <label>Período existente</label>
+          <select id="pdfPeriodo"><option value="">Seleccionar...</option></select>
+        </div>
+        <div class="field">
+          <label>O crear nuevo período</label>
+          <input type="text" id="pdfNuevo" placeholder="Ej: Abril 2026">
+        </div>
+      </div>
+      <label class="upload-zone" id="pdfZone">
+        <input type="file" accept=".pdf" id="pdfFile">
+        <div style="font-size:28px;margin-bottom:6px">📄</div>
+        <div style="font-size:13px;font-weight:500;color:var(--text2)">Arrastrá o hacé click para seleccionar el PDF de Metricool</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:3px">Reporte Social Media Insights exportado de Metricool</div>
+      </label>
+
+      <div class="ai-status" id="aiStatus">
+        <div class="ai-spinner"></div>
+        <span id="aiStatusMsg">Claude está leyendo el PDF...</span>
+      </div>
+
+      <div class="ai-results" id="aiResults">
+        <div class="ai-results-title">✅ Datos extraídos automáticamente — revisá y confirmá</div>
+        <div id="aiResultsContent"></div>
+        <div class="confirm-bar">
+          <span class="note">Revisá los datos antes de guardar. Podés editar cualquier campo arriba si algo no está bien.</span>
+          <button class="btn btn-primary" onclick="saveOrgFromAI()">Guardar todo en Supabase</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOP POSTS -->
+  <div class="card">
+    <div class="card-head"><span style="font-size:18px">🖼️</span><div><div class="card-title">Top posts del mes</div><div class="card-sub">Agregá los posts destacados con su URL para mostrarlos en el reporte</div></div></div>
+    <div class="card-body">
+      <div class="row2">
+        <div class="field"><label>Período</label><select id="postPer"><option value="">Seleccionar...</option></select></div>
+        <div class="field"><label>Red social</label>
+          <select id="postRed"><option value="instagram">Instagram</option><option value="facebook">Facebook</option><option value="tiktok">TikTok</option><option value="youtube">YouTube</option></select>
+        </div>
+      </div>
+      <div class="field"><label>URL del post</label><input type="url" id="p_url" placeholder="https://www.instagram.com/p/xxxxx/"></div>
+      <div class="field"><label>URL de imagen/miniatura (opcional)</label><input type="url" id="p_img" placeholder="https://..."></div>
+      <div class="field"><label>Texto del post</label><textarea id="p_txt" placeholder="Cada paso cuenta..."></textarea></div>
+      <div class="row3">
+        <div class="field"><label>Alcance</label><input type="number" id="p_alc" placeholder="4664"></div>
+        <div class="field"><label>Likes</label><input type="number" id="p_lik" placeholder="84"></div>
+        <div class="field"><label>Guardados</label><input type="number" id="p_gua" placeholder="65"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Engagement</label><input type="number" step="0.01" id="p_eng" placeholder="3.49"></div>
+        <div class="field"><label>Fecha publicación</label><input type="date" id="p_fecha"></div>
+      </div>
+      <button class="btn btn-primary" onclick="savePost()">Agregar post</button>
+      <div class="sep"></div>
+      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">Posts guardados</div>
+      <div id="postList" style="font-size:13px;color:var(--text3)">Seleccioná un período</div>
+    </div>
+  </div>
+
+  <!-- EMBAJADORES EXCEL -->
+  <div class="card">
+    <div class="card-head"><span style="font-size:18px">🏆</span><div><div class="card-title">Cargar Embajadores</div><div class="card-sub">Excel de resultados — hoja "RESULTADOS EMBAJADORES" — parseo automático</div></div></div>
+    <div class="card-body">
+      <div class="row2" style="margin-bottom:14px">
+        <div class="field">
+          <label>Período existente</label>
+          <select id="embPeriodo"><option value="">Seleccionar...</option></select>
+        </div>
+        <div class="field">
+          <label>O crear nuevo período</label>
+          <input type="text" id="embNuevo" placeholder="Ej: Marzo 2026">
+        </div>
+      </div>
+      <label class="upload-zone" id="embZone">
+        <input type="file" accept=".xlsx,.xls" id="embFile">
+        <div style="font-size:28px;margin-bottom:6px">📊</div>
+        <div style="font-size:13px;font-weight:500;color:var(--text2)">Arrastrá o hacé click para seleccionar el Excel de embajadores</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:3px">Archivo REDES_EVERLAST.xlsx — hoja "RESULTADOS EMBAJADORES"</div>
+      </label>
+      <div class="progress" id="embProgress"><div class="progress-bar" id="embBar" style="width:0%"></div></div>
+      <div id="embPreview" style="margin-top:14px;display:none">
+        <div class="preview-box" id="embPreviewContent"></div>
+        <button class="btn btn-primary" id="embSaveBtn" style="margin-top:12px" onclick="saveEmb()">Guardar en Supabase</button>
+      </div>
+    </div>
+  </div>
+
+
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const SB="https://uptxdhmdtaoiripndcbo.supabase.co";
+const KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwdHhkaG1kdGFvaXJpcG5kY2JvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyNzcxNTIsImV4cCI6MjA5MTg1MzE1Mn0.ZocYsr05t3Q0soqvVbPPoeaC38T8ds4L1LFcWFQmU9I";
+const H={apikey:KEY,Authorization:"Bearer "+KEY,"Content-Type":"application/json",Prefer:"return=minimal"};
+const Hg={apikey:KEY,Authorization:"Bearer "+KEY};
+let net="instagram",adsData=null,aiExtracted=null;
+
+function toast(m,t="ok"){const e=document.getElementById("toast");e.textContent=m;e.className="toast show "+t;setTimeout(()=>e.className="toast",3500);}
+async function get(tbl,q=""){const r=await fetch(`${SB}/rest/v1/${tbl}?${q}`,{headers:Hg});if(!r.ok)throw new Error(await r.text());return r.json();}
+async function ins(tbl,d){const r=await fetch(`${SB}/rest/v1/${tbl}`,{method:"POST",headers:H,body:JSON.stringify(d)});if(!r.ok)throw new Error(await r.text());}
+async function del(tbl,f){const r=await fetch(`${SB}/rest/v1/${tbl}?${f}`,{method:"DELETE",headers:H});if(!r.ok)throw new Error(await r.text());}
+const n=v=>typeof v==="number"?v:parseFloat(v)||0;
+
+async function loadPeriodos(){
+  try{
+    const safe = async (fn) => { try{ return await fn(); }catch(e){ console.warn('Table error:', e.message); return []; } };
+    const a=await safe(()=>get("reportes_ads","select=periodo&es_total=eq.true"));
+    const b=await safe(()=>get("reportes_organico","select=periodo"));
+    const c=await safe(()=>get("embajadores","select=periodo"));
+    const all=[...new Set([...a.map(r=>r.periodo),...b.map(r=>r.periodo),...c.map(r=>r.periodo)])].sort().reverse();
+    ["pdfPeriodo","postPer","embPeriodo"].forEach(id=>{
+      const s=document.getElementById(id);const cv=s.value;
+      s.innerHTML="<option value=''>Seleccionar...</option>";
+      all.forEach(p=>s.insertAdjacentHTML("beforeend",`<option value="${p}">${p}</option>`));
+      if(cv)s.value=cv;
+    });
+    const el=document.getElementById("periodList");
+    if(!all.length){el.innerHTML="<div style=\"color:var(--text3)\">Sin períodos aún</div>";return;}
+    el.innerHTML=all.map(p=>`<div class="pitem"><div><div style="font-weight:500">${p}</div></div><button class="btn btn-danger btn-sm" onclick="delPeriodo(\'${p}\')">Eliminar</button></div>`).join("");
+  }catch(e){document.getElementById("periodList").textContent="Error: "+e.message;}
+}
+
+async function delPeriodo(p){
+  if(!confirm(`¿Eliminar "${p}"?`))return;
+  try{
+    await del("reportes_ads",`periodo=eq.${encodeURIComponent(p)}`);
+    await del("reportes_organico",`periodo=eq.${encodeURIComponent(p)}`);
+    await del("top_posts",`periodo=eq.${encodeURIComponent(p)}`);
+    await del("embajadores",`periodo=eq.${encodeURIComponent(p)}`);
+    toast(`"${p}" eliminado`);loadPeriodos();
+  }catch(e){toast("Error: "+e.message,"err");}
+}
+
+// ─── META ADS EXCEL ───
+function parseExcel(file){
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const wb=XLSX.read(e.target.result,{type:"array"});
+      const sn=wb.SheetNames.find(s=>s.toLowerCase().includes("raw"))||wb.SheetNames[0];
+      const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,defval:""});
+      let hr=-1;for(let i=0;i<rows.length;i++){if(rows[i].some(c=>c&&c.toString().toLowerCase().includes("nombre de la cuenta"))){hr=i;break;}}
+      if(hr===-1){toast("Encabezado no encontrado","err");return;}
+      const h=rows[hr].map(c=>(c||"").toString().toLowerCase().trim());
+      const ci=k=>h.findIndex(x=>x.includes(k));
+      const iA=ci("nombre de la cuenta"),iC=ci("nombre de la campaña"),iR=ci("alcance"),iI=ci("impresiones"),iS=ci("importe gastado"),iM=ci("cpm"),iN=ci("interacciones con la publicación"),iV=ci("reproducciones de video"),iK=ci("clics en el enlace"),iT=ci("ctr"),iD=ci("inicio del informe");
+      const dr=rows.slice(hr+1).filter(r=>r[iA]&&r[iA].toString().trim());
+      let per="Sin fecha";
+      if(dr.length&&dr[0][iD]){const raw=dr[0][iD].toString().trim();const pts=raw.slice(0,10).split("-");const ms=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];if(pts.length===3&&ms[+pts[1]-1])per=ms[+pts[1]-1]+" "+pts[0];}
+      const recs=dr.map(r=>({periodo:per,cuenta:r[iA].toString().trim(),campana:(r[iC]||"").toString().trim(),es_total:(r[iC]||"").toString().trim().toLowerCase()==="all",spent:n(r[iS]),reach:n(r[iR]),impressions:n(r[iI]),interactions:n(r[iN]),video_views:n(r[iV]),clicks:n(r[iK]),cpm:n(r[iM]),ctr:n(r[iT])}));
+      adsData={periodo:per,records:recs};
+      const tots=recs.filter(r=>r.es_total);
+      document.getElementById("adsPreviewContent").innerHTML=`<div><strong>Período:</strong> ${per}</div><div><strong>Filas:</strong> ${recs.length} · <strong>Cuentas:</strong> ${tots.length}</div><div><strong>Inversión total:</strong> $${tots.reduce((s,r)=>s+r.spent,0).toFixed(0)} USD</div><div><strong>Alcance total:</strong> ${tots.reduce((s,r)=>s+r.reach,0).toLocaleString()}</div>`;
+      document.getElementById("adsPreview").style.display="block";
+    }catch(e){toast("Error leyendo Excel: "+e.message,"err");}
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+async function saveAds(){
+  if(!adsData)return;
+  const btn=document.getElementById("adsSaveBtn");btn.disabled=true;btn.textContent="Guardando...";
+  const prog=document.getElementById("adsProgress");prog.style.display="block";
+  const bar=document.getElementById("adsBar");
+  try{
+    await del("reportes_ads",`periodo=eq.${encodeURIComponent(adsData.periodo)}`);
+    const chunks=[];for(let i=0;i<adsData.records.length;i+=50)chunks.push(adsData.records.slice(i,i+50));
+    for(let i=0;i<chunks.length;i++){await ins("reportes_ads",chunks[i]);bar.style.width=((i+1)/chunks.length*100)+"%";}
+    toast(`"${adsData.periodo}" guardado ✓`);document.getElementById("adsPreview").style.display="none";adsData=null;loadPeriodos();
+  }catch(e){toast("Error: "+e.message,"err");}
+  btn.disabled=false;btn.textContent="Guardar en Supabase";prog.style.display="none";bar.style.width="0%";
+}
+
+document.getElementById("adsFile").addEventListener("change",e=>{if(e.target.files[0])parseExcel(e.target.files[0]);});
+const az=document.getElementById("adsZone");
+az.addEventListener("dragover",e=>{e.preventDefault();az.style.borderColor="var(--accent)";az.style.background="#e8f5e9";});
+az.addEventListener("dragleave",()=>{az.style.borderColor="";az.style.background="";});
+az.addEventListener("drop",e=>{e.preventDefault();az.style.borderColor="";az.style.background="";if(e.dataTransfer.files[0])parseExcel(e.dataTransfer.files[0]);});
+
+// ─── METRICOOL PDF → PDF.js regex (sin API) ───
+
+// Convierte "141.14K" → 141140, "8.71M" → 8710000
+function parseNum(s){
+  if(!s)return 0;
+  s=s.toString().trim().replace(",",".");
+  if(s.includes("M"))return Math.round(parseFloat(s)*1e6);
+  if(s.includes("K"))return Math.round(parseFloat(s)*1e3);
+  return parseFloat(s)||0;
+}
+
+function extractMetricool(text){
+  const redes={
+    instagram:{seguidores:0,nuevos_seguidores:0,impresiones:0,interacciones:0,engagement:0,publicaciones:0,alcance_promedio:0},
+    facebook:{seguidores:0,nuevos_seguidores:0,impresiones:0,interacciones:0,engagement:0,publicaciones:0,alcance_promedio:0},
+    tiktok:{seguidores:0,nuevos_seguidores:0,impresiones:0,interacciones:0,engagement:0,publicaciones:0,alcance_promedio:0},
+    youtube:{seguidores:0,nuevos_seguidores:0,impresiones:0,interacciones:0,engagement:0,publicaciones:0,alcance_promedio:0}
+  };
+
+  // Helper: número + % + label en formato Metricool
+  function findNum(t, label){
+    const re=new RegExp("([\\d][\\d.,]*[KM]?)\\s*\\n\\s*[+\\-][\\d.,]+%\\s*\\n\\s*"+label,"i");
+    const m=t.match(re);
+    return m?parseNum(m[1]):0;
+  }
+
+  // ── SEGUIDORES totales (página resumen) ──
+  redes.facebook.seguidores  = findNum(text,"Facebook");
+  redes.instagram.seguidores = findNum(text,"Instagram");
+  redes.tiktok.seguidores    = findNum(text,"Tiktok");
+  redes.youtube.seguidores   = findNum(text,"Youtube");
+
+  // ── IMPRESIONES (buscar la sección de impresiones) ──
+  const impIdx=text.search(/\nImpresiones\s/i);
+  if(impIdx>-1){
+    const sec=text.slice(Math.max(0,impIdx-800),impIdx+200);
+    const v=[findNum(sec,"Facebook"),findNum(sec,"Instagram"),findNum(sec,"Tiktok"),findNum(sec,"Youtube")];
+    if(v[0])redes.facebook.impresiones=v[0];
+    if(v[1])redes.instagram.impresiones=v[1];
+    if(v[2])redes.tiktok.impresiones=v[2];
+    if(v[3])redes.youtube.impresiones=v[3];
+  }
+
+  // ── INTERACCIONES ──
+  const intIdx=text.search(/\nInteracciones\s/i);
+  if(intIdx>-1){
+    const sec=text.slice(Math.max(0,intIdx-800),intIdx+200);
+    const v=[findNum(sec,"Facebook"),findNum(sec,"Instagram"),findNum(sec,"Tiktok"),findNum(sec,"Youtube")];
+    if(v[0])redes.facebook.interacciones=v[0];
+    if(v[1])redes.instagram.interacciones=v[1];
+    if(v[2])redes.tiktok.interacciones=v[2];
+    if(v[3])redes.youtube.interacciones=v[3];
+  }
+
+  // ── PUBLICACIONES ──
+  const pubIdx=text.search(/\nPublicaciones\s/i);
+  if(pubIdx>-1){
+    const sec=text.slice(Math.max(0,pubIdx-800),pubIdx+200);
+    const v=[findNum(sec,"Facebook"),findNum(sec,"Instagram"),findNum(sec,"Tiktok"),findNum(sec,"Youtube")];
+    if(v[0])redes.facebook.publicaciones=v[0];
+    if(v[1])redes.instagram.publicaciones=v[1];
+    if(v[2])redes.tiktok.publicaciones=v[2];
+    if(v[3])redes.youtube.publicaciones=v[3];
+  }
+
+  // ── SECCIONES POR RED para métricas extra ──
+  const fbStart=text.indexOf("EverlastLatino");
+  const igStart=text.indexOf("everlastlatino");
+  const ttStart=text.indexOf("Everlast Latino");
+  const ytStart=text.indexOf("EVERLAST LATINO");
+
+  function getSec(s,e){if(s===-1)return "";return text.slice(s,e>s&&e>-1?e:s+6000);}
+  const fbT=getSec(fbStart,igStart);
+  const igT=getSec(igStart,ttStart);
+  const ttT=getSec(ttStart,ytStart);
+  const ytT=getSec(ytStart,-1);
+
+  // Facebook: adquiridos
+  const fbA=fbT.match(/(\d[\d,]*)[\s\S]{0,5}\n[\s\S]{0,5}\+[\d.]+%[\s\S]{0,5}\nAdquiridos/i);
+  if(fbA)redes.facebook.nuevos_seguidores=parseNum(fbA[1].replace(",",""));
+
+  // Instagram
+  const igBal=igT.match(/(\d[\d,]*)\s*\n\s*Balance/i);
+  if(igBal)redes.instagram.nuevos_seguidores=parseNum(igBal[1]);
+  const igEng=igT.match(/([\d.,]+)\s*\n\s*[+\-][\d.,]+%\s*\n\s*Engagement/i);
+  if(igEng)redes.instagram.engagement=parseFloat(igEng[1]);
+  const igAlc=igT.match(/([\d.]+[KM]?)\s*\n\s*[+\-][\d.,]+%\s*\n\s*Alcance promedio/i);
+  if(igAlc)redes.instagram.alcance_promedio=parseNum(igAlc[1]);
+
+  // TikTok
+  const ttA=ttT.match(/(\d[\d,]*)\s*\n\s*[+\-][\d.]+%\s*\n\s*Adquiridos/i);
+  if(ttA)redes.tiktok.nuevos_seguidores=parseNum(ttA[1]);
+  const ttEng=ttT.match(/([\d.,]+)\s*\n\s*[+\-][\d.,]+%\s*\n\s*Engagement/i);
+  if(ttEng)redes.tiktok.engagement=parseFloat(ttEng[1]);
+
+  // YouTube: ganados
+  const ytG=ytT.match(/(\d[\d,]*)\s*\n\s*[+\-][\d.]+%\s*\n\s*Ganados/i);
+  if(ytG)redes.youtube.nuevos_seguidores=parseNum(ytG[1]);
+
+  return redes;
+}
+
+
+async function parsePDF(file){
+  const per=document.getElementById("pdfNuevo").value.trim()||document.getElementById("pdfPeriodo").value;
+  if(!per){toast("Indicá el período primero","err");return;}
+
+  const status=document.getElementById("aiStatus");
+  const results=document.getElementById("aiResults");
+  status.style.display="flex";results.style.display="none";
+  document.getElementById("aiStatusMsg").textContent="Leyendo PDF...";
+
+  try{
+    // Cargar PDF.js desde CDN
+    if(!window.pdfjsLib){
+      await new Promise((res,rej)=>{
+        const s=document.createElement("script");
+        s.src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+        s.onload=res;s.onerror=rej;
+        document.head.appendChild(s);
+      });
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    }
+
+    // Leer archivo como ArrayBuffer
+    const arrayBuffer=await file.arrayBuffer();
+    const pdf=await window.pdfjsLib.getDocument({data:arrayBuffer}).promise;
+    
+    document.getElementById("aiStatusMsg").textContent=`Procesando ${pdf.numPages} páginas...`;
+    
+    // Extraer texto de todas las páginas
+    let fullText="";
+    for(let i=1;i<=pdf.numPages;i++){
+      const page=await pdf.getPage(i);
+      const tc=await page.getTextContent();
+      const pageText=tc.items.map(item=>item.str).join("\n");
+      fullText+=pageText+"\n";
+    }
+
+    document.getElementById("aiStatusMsg").textContent="Extrayendo métricas...";
+    
+    // Guardar texto para debug (opcional)
+    window._pdfText=fullText;
+    
+    const redes=extractMetricool(fullText);
+    const parsed={periodo:per,redes};
+    
+    aiExtracted={periodo:per,redes};
+    renderAIResults(parsed);
+    status.style.display="none";
+    results.style.display="block";
+    toast("Métricas extraídas del PDF ✓");
+
+  }catch(e){
+    status.style.display="none";
+    toast("Error: "+e.message,"err");
+    console.error(e);
+  }
+}
+
+function renderAIResults(data){
+  const netConfig={
+    instagram:{name:"Instagram",color:"#e1306c",icon:"📸"},
+    facebook:{name:"Facebook",color:"#1877f2",icon:"👥"},
+    tiktok:{name:"TikTok",color:"#0d9488",icon:"🎵"},
+    youtube:{name:"YouTube",color:"#dc2626",icon:"▶️"}
+  };
+  const labels={seguidores:"Seguidores",nuevos_seguidores:"Nuevos seguidores",impresiones:"Impresiones",interacciones:"Interacciones",engagement:"Engagement %",publicaciones:"Publicaciones",alcance_promedio:"Alcance promedio"};
+  let html="";
+  Object.entries(data.redes||{}).forEach(([red,vals])=>{
+    const cfg=netConfig[red];if(!cfg)return;
+    const hasData=Object.values(vals).some(v=>v&&v!==0);
+    html+=`<div class="ai-net-block">
+      <div class="ai-net-title"><span>${cfg.icon}</span><span style="color:${cfg.color}">${cfg.name}</span>${!hasData?'<span style="font-size:10px;color:var(--text3);font-weight:400">— sin datos detectados</span>':""}
+      </div>
+      <div class="ai-grid">
+        ${Object.entries(vals).map(([k,v])=>`<div class="ai-field"><div class="ai-label">${labels[k]||k}</div><div class="ai-val">${v?v.toLocaleString("es-AR"):"0"}</div></div>`).join("")}
+      </div>
+    </div>`;
+  });
+  document.getElementById("aiResultsContent").innerHTML=html;
+}
+
+async function saveOrgFromAI(){
+  if(!aiExtracted){return;}
+  const {periodo,redes}=aiExtracted;
+  const btn=event.target;btn.disabled=true;btn.textContent="Guardando...";
+  try{
+    for(const [red,vals] of Object.entries(redes)){
+      const hasData=Object.values(vals).some(v=>v&&v!==0);
+      if(!hasData)continue;
+      await del("reportes_organico",`periodo=eq.${encodeURIComponent(periodo)}&red=eq.${red}`);
+      await ins("reportes_organico",{periodo,red,...vals});
+    }
+    toast(`Datos de "${periodo}" guardados ✓`);
+    document.getElementById("aiResults").style.display="none";
+    aiExtracted=null;loadPeriodos();
+  }catch(e){toast("Error: "+e.message,"err");}
+  btn.disabled=false;btn.textContent="Guardar todo en Supabase";
+}
+
+document.getElementById("pdfFile").addEventListener("change",e=>{if(e.target.files[0])parsePDF(e.target.files[0]);});
+const pz=document.getElementById("pdfZone");
+pz.addEventListener("dragover",e=>{e.preventDefault();pz.style.borderColor="var(--accent)";pz.style.background="#e8f5e9";});
+pz.addEventListener("dragleave",()=>{pz.style.borderColor="";pz.style.background="";});
+pz.addEventListener("drop",e=>{e.preventDefault();pz.style.borderColor="";pz.style.background="";if(e.dataTransfer.files[0])parsePDF(e.dataTransfer.files[0]);});
+
+// ─── TOP POSTS ───
+async function savePost(){
+  const per=document.getElementById("postPer").value;if(!per){toast("Seleccioná período","err");return;}
+  try{
+    await ins("top_posts",{periodo:per,red:document.getElementById("postRed").value,url_post:document.getElementById("p_url").value||null,url_imagen:document.getElementById("p_img").value||null,texto:document.getElementById("p_txt").value||null,alcance:+document.getElementById("p_alc").value||0,likes:+document.getElementById("p_lik").value||0,guardados:+document.getElementById("p_gua").value||0,engagement:+document.getElementById("p_eng").value||0,fecha_publicacion:document.getElementById("p_fecha").value||null});
+    toast("Post agregado ✓");["p_url","p_img","p_txt","p_alc","p_lik","p_gua","p_eng","p_fecha"].forEach(id=>document.getElementById(id).value="");loadPostList();
+  }catch(e){toast("Error: "+e.message,"err");}
+}
+
+async function loadPostList(){
+  const per=document.getElementById("postPer").value;const el=document.getElementById("postList");
+  if(!per){el.textContent="Seleccioná un período";return;}
+  try{
+    const posts=await get("top_posts",`periodo=eq.${encodeURIComponent(per)}&order=created_at.desc`);
+    if(!posts.length){el.textContent="Sin posts para este período";return;}
+    el.innerHTML=posts.map(p=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">${p.url_imagen?`<img src="${p.url_imagen}" style="width:36px;height:36px;border-radius:5px;object-fit:cover" onerror="this.style.display=\'none\'">`:"<div style=\"width:36px;height:36px;background:var(--bg3);border-radius:5px;display:flex;align-items:center;justify-content:center\">🖼️</div>"}<div style="flex:1"><div style="font-size:12px;font-weight:500">${(p.texto||"Sin texto").slice(0,55)}...</div><div style="font-size:11px;color:var(--text3)">${p.red} · ${p.alcance?.toLocaleString()} alcance · ${p.likes} likes</div></div><button onclick="delPost(\'${p.id}\')" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:18px">×</button></div>`).join("");
+  }catch(e){el.textContent="Error: "+e.message;}
+}
+
+async function delPost(id){try{await del("top_posts",`id=eq.${id}`);toast("Eliminado");loadPostList();}catch(e){toast(e.message,"err");}}
+document.getElementById("postPer").addEventListener("change",loadPostList);
+
+loadPeriodos();
+
+// ─── EMBAJADORES EXCEL ───
+let embData = null;
+
+const MESES_MAP = {
+  'enero':1,'febrero':2,'marzo':3,'abril':4,'mayo':5,'junio':6,
+  'julio':7,'agosto':8,'septiembre':9,'octubre':10,'noviembre':11,'diciembre':12
+};
+
+const PAISES_VALIDOS = ['panama','guatemala','colombia','costa rica','el salvador',
+  'honduras','republica dominicana','rd','venezuela','uruguay','paraguay','ecuador'];
+
+function parsePeriodoFromRow(mes, anio){
+  const m = (mes||'').toString().trim().toLowerCase();
+  const y = parseInt(anio)||0;
+  const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const idx = MESES_MAP[m];
+  if(idx && y) return `${meses[idx-1]} ${y}`;
+  return null;
+}
+
+function parseEmbExcel(file){
+  const reader = new FileReader();
+  reader.onload = e => {
+    try{
+      const wb = XLSX.read(e.target.result, {type:'array'});
+      // Find the RESULTADOS EMBAJADORES sheet
+      const sheetName = wb.SheetNames.find(s => s.toLowerCase().includes('resultados') && s.toLowerCase().includes('embajador')) || 
+                        wb.SheetNames.find(s => s.toLowerCase().includes('embajador'));
+      if(!sheetName){ toast('No se encontró la hoja de embajadores','err'); return; }
+      
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], {header:1, defval:''});
+      
+      // Find header row
+      let hr = -1;
+      for(let i=0;i<rows.length;i++){
+        if(rows[i].some(c => c && c.toString().toLowerCase().includes('nombre'))){
+          hr = i; break;
+        }
+      }
+      if(hr === -1){ toast('No se encontró el encabezado','err'); return; }
+      
+      const headers = rows[hr].map(h => (h||'').toString().toLowerCase().trim());
+      const ci = k => headers.findIndex(h => h.includes(k));
+      
+      const iPais = ci('pais');
+      const iAnio = ci('año') !== -1 ? ci('año') : ci('ano');
+      const iMes = ci('mes');
+      const iNombre = ci('nombre');
+      const iSeg = ci('seguidores') !== -1 ? ci('seguidores') : ci('cantidad');
+      const iPosts = ci('posts');
+      const iLikes = ci('likes');
+      const iComent = headers.findIndex(h => h === 'comentarios');
+      const iGuard = ci('guardados');
+      const iAlc = ci('alcance');
+      const iVideo = ci('video');
+      const iEng = ci('engagement');
+      
+      const per = document.getElementById('embNuevo').value.trim() || document.getElementById('embPeriodo').value;
+      
+      const dataRows = rows.slice(hr+1).filter(r => {
+        const pais = (r[iPais]||'').toString().trim().toLowerCase();
+        const nombre = (r[iNombre]||'').toString().trim();
+        return nombre && PAISES_VALIDOS.some(p => pais.includes(p));
+      });
+      
+      // If period not specified, detect from data
+      let periodo = per;
+      if(!periodo && dataRows.length){
+        const detectedPer = parsePeriodoFromRow(dataRows[0][iMes], dataRows[0][iAnio]);
+        if(detectedPer) periodo = detectedPer;
+      }
+      
+      if(!periodo){ toast('Indicá el período o el Excel debe tener mes/año','err'); return; }
+      
+      // Filter by period if detected from file
+      let filtered = dataRows;
+      if(!per && periodo){
+        const [mesNombre, anioStr] = periodo.split(' ');
+        const mesNum = MESES_MAP[mesNombre.toLowerCase()];
+        filtered = dataRows.filter(r => {
+          const rowPer = parsePeriodoFromRow(r[iMes], r[iAnio]);
+          return rowPer === periodo;
+        });
+      }
+      
+      const nv = v => { const n = parseFloat((v||0).toString().replace(',','.')); return isNaN(n)||n<0?0:Math.round(n*100)/100; };
+      
+      const records = filtered.map(r => ({
+        periodo,
+        pais: (r[iPais]||'').toString().trim(),
+        nombre: (r[iNombre]||'').toString().trim(),
+        seguidores: nv(r[iSeg]),
+        posts: nv(r[iPosts]),
+        likes: nv(r[iLikes]),
+        comentarios: nv(r[iComent]),
+        guardados: nv(r[iGuard]),
+        alcance: nv(r[iAlc]),
+        video_views: nv(r[iVideo]),
+        engagement: parseFloat((r[iEng]||0).toString())||0
+      })).filter(r => r.nombre);
+      
+      embData = {periodo, records};
+      
+      const porPais = {};
+      records.forEach(r => { if(!porPais[r.pais]) porPais[r.pais]=0; porPais[r.pais]++; });
+      
+      document.getElementById('embPreviewContent').innerHTML = 
+        `<div><strong>Período:</strong> ${periodo}</div>
+         <div><strong>Embajadores:</strong> ${records.length}</div>
+         <div><strong>Países:</strong> ${Object.entries(porPais).map(([p,c])=>`${p} (${c})`).join(' · ')}</div>`;
+      document.getElementById('embPreview').style.display = 'block';
+    }catch(e){ toast('Error: '+e.message,'err'); console.error(e); }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+async function saveEmb(){
+  if(!embData) return;
+  const btn = document.getElementById('embSaveBtn');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  const prog = document.getElementById('embProgress'); prog.style.display = 'block';
+  const bar = document.getElementById('embBar');
+  try{
+    await del('embajadores', `periodo=eq.${encodeURIComponent(embData.periodo)}`);
+    const chunks = [];
+    for(let i=0;i<embData.records.length;i+=50) chunks.push(embData.records.slice(i,i+50));
+    for(let i=0;i<chunks.length;i++){
+      await ins('embajadores', chunks[i]);
+      bar.style.width = ((i+1)/chunks.length*100)+'%';
+    }
+    toast(`Embajadores "${embData.periodo}" guardados ✓`);
+    document.getElementById('embPreview').style.display = 'none';
+    embData = null; loadPeriodos();
+  }catch(e){ toast('Error: '+e.message,'err'); }
+  btn.disabled = false; btn.textContent = 'Guardar en Supabase';
+  prog.style.display = 'none'; bar.style.width = '0%';
+}
+
+document.getElementById('embFile').addEventListener('change', e => { if(e.target.files[0]) parseEmbExcel(e.target.files[0]); });
+const ez = document.getElementById('embZone');
+ez.addEventListener('dragover', e => { e.preventDefault(); ez.style.borderColor='var(--accent)'; ez.style.background='#e8f5e9'; });
+ez.addEventListener('dragleave', () => { ez.style.borderColor=''; ez.style.background=''; });
+ez.addEventListener('drop', e => { e.preventDefault(); ez.style.borderColor=''; ez.style.background=''; if(e.dataTransfer.files[0]) parseEmbExcel(e.dataTransfer.files[0]); });
+
+
+
+
+</script>
+</body>
+</html>
