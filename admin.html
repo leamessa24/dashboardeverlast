@@ -198,42 +198,6 @@ body{background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;min-h
       </div>
     </div>
   </div>
-
-
-  <!-- EMBAJADORES EXCEL -->
-  <div class="card">
-    <div class="card-head"><span style="font-size:18px">🏆</span><div><div class="card-title">Cargar Embajadores</div><div class="card-sub">Excel de resultados — una hoja, sin headers — parseo automático</div></div></div>
-    <div class="card-body">
-      <div class="row2" style="margin-bottom:14px">
-        <div class="field">
-          <label>Período existente</label>
-          <select id="embPeriodo"><option value="">Seleccionar...</option></select>
-        </div>
-        <div class="field">
-          <label>O crear nuevo período</label>
-          <input type="text" id="embNuevo" placeholder="Ej: Marzo 2026">
-        </div>
-      </div>
-      <label class="upload-zone" id="embZone">
-        <input type="file" accept=".xlsx,.xls" id="embFile">
-        <div style="font-size:28px;margin-bottom:6px">📊</div>
-        <div style="font-size:13px;font-weight:500;color:var(--text2)">Arrastrá o hacé click para seleccionar el Excel de embajadores</div>
-        <div style="font-size:11px;color:var(--text3);margin-top:3px">Archivo con País, Año, Mes, Nombre, Seguidores, Posts, Likes...</div>
-      </label>
-      <div id="embStatus" style="display:none;margin-top:12px;padding:10px 14px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;font-size:13px;color:#0369a1;align-items:center;gap:8px">
-        <div style="width:14px;height:14px;border:2px solid #bae6fd;border-top-color:#0369a1;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0"></div>
-        <span id="embStatusMsg">Leyendo archivo...</span>
-      </div>
-      <div class="progress" id="embProgress"><div class="progress-bar" id="embBar" style="width:0%"></div></div>
-      <div id="embPreview" style="margin-top:14px;display:none">
-        <div class="preview-box" id="embPreviewContent"></div>
-        <button class="btn btn-primary" id="embSaveBtn" style="margin-top:12px" onclick="saveEmb()">Guardar en Supabase</button>
-      </div>
-    </div>
-  </div>
-
-
-</div>
 <div class="toast" id="toast"></div>
 <script>
 const SB="https://uptxdhmdtaoiripndcbo.supabase.co";
@@ -328,66 +292,64 @@ az.addEventListener("drop",e=>{e.preventDefault();az.style.borderColor="";az.sty
 function cleanNum(v){
   if(v===null||v===undefined)return 0;
   const s=String(v).trim().replace(/,/g,'').replace(/\s/g,'');
-  if(!s||s==='—'||s==='-'||s==='nan'||s==='Balance')return 0;
+  if(!s||s==='—'||s==='-'||s==='nan')return 0;
   if(s.includes('K'))return Math.round(parseFloat(s)*1000);
   if(s.includes('M'))return Math.round(parseFloat(s)*1000000);
   return parseFloat(s)||0;
 }
 
 function parseMetricoolExcel(file){
-  const per=document.getElementById('pdfNuevo').value.trim()||document.getElementById('pdfPeriodo').value;
-  if(!per){toast('Indicá el período primero','err');return;}
-  const status=document.getElementById('aiStatus');
-  const results=document.getElementById('aiResults');
-  status.style.display='flex';results.style.display='none';
-  document.getElementById('aiStatusMsg').textContent='Leyendo Excel de Metricool...';
   const reader=new FileReader();
+
   reader.onload=e=>{
-    try{
-      const wb=XLSX.read(e.target.result,{type:'array'});
-      const sheet=(name)=>{const s=wb.Sheets[name];if(!s)return null;return XLSX.utils.sheet_to_json(s,{header:1,defval:null});};
-      const redes={
-        instagram:{seguidores:0,nuevos_seguidores:0,impresiones:0,interacciones:0,engagement:0,publicaciones:0,alcance_promedio:0},
-        facebook:{seguidores:0,nuevos_seguidores:0,impresiones:0,interacciones:0,engagement:0,publicaciones:0,alcance_promedio:0},
-        tiktok:{seguidores:0,nuevos_seguidores:0,impresiones:0,interacciones:0,engagement:0,publicaciones:0,alcance_promedio:0},
-        youtube:{seguidores:0,nuevos_seguidores:0,impresiones:0,interacciones:0,engagement:0,publicaciones:0,alcance_promedio:0}
+    const wb=XLSX.read(e.target.result,{type:'array'});
+
+    const sheet=(name)=>{
+      const s=wb.Sheets[name];
+      if(!s) return null;
+      return XLSX.utils.sheet_to_json(s,{header:1,defval:null});
+    };
+        const redes={};
+
+    wb.SheetNames.forEach(name=>{
+      const lower=name.toLowerCase();
+      const data=sheet(name);
+      if(!data) return;
+
+      let red=null;
+      if(lower.includes('instagram')) red='instagram';
+      if(lower.includes('facebook')) red='facebook';
+      if(lower.includes('tiktok')) red='tiktok';
+      if(lower.includes('youtube')) red='youtube';
+
+      if(!red) return;
+
+      const flat=data.flat().map(c=>(c||'').toString().toLowerCase());
+
+      const findMetric=(label)=>{
+        const idx=flat.findIndex(v=>v.includes(label));
+        if(idx===-1) return 0;
+        return cleanNum(flat[idx+1]);
       };
-      const res=sheet('Resumen General');
-      if(res){
-        [[10,'facebook'],[11,'instagram'],[12,'tiktok'],[13,'youtube']].forEach(([i,red])=>{
-          const row=res[i];if(!row)return;
-          redes[red].seguidores=cleanNum(row[2]);redes[red].publicaciones=cleanNum(row[4]);
-          redes[red].impresiones=cleanNum(row[5]);redes[red].interacciones=cleanNum(row[6]);
-          redes[red].nuevos_seguidores=cleanNum(row[7]);
-        });
-      }
-      const ig=sheet('Instagram');
-      if(ig&&ig[3]){redes.instagram.seguidores=cleanNum(ig[3][1])||redes.instagram.seguidores;redes.instagram.impresiones=cleanNum(ig[3][3])||redes.instagram.impresiones;redes.instagram.nuevos_seguidores=cleanNum(ig[3][5])||redes.instagram.nuevos_seguidores;redes.instagram.publicaciones=cleanNum(ig[3][7])||redes.instagram.publicaciones;}
-      if(ig&&ig[7]){redes.instagram.alcance_promedio=cleanNum(ig[7][1])||redes.instagram.alcance_promedio;redes.instagram.engagement=parseFloat(String(ig[7][5]).replace(',','.'))||redes.instagram.engagement;}
-      const fb=sheet('Facebook');
-      if(fb&&fb[3]){redes.facebook.seguidores=cleanNum(fb[3][1])||redes.facebook.seguidores;redes.facebook.impresiones=cleanNum(fb[3][3])||redes.facebook.impresiones;redes.facebook.interacciones=cleanNum(fb[3][5])||redes.facebook.interacciones;redes.facebook.publicaciones=cleanNum(fb[3][7])||redes.facebook.publicaciones;}
-      if(fb&&fb[7]){redes.facebook.nuevos_seguidores=cleanNum(fb[7][5])||redes.facebook.nuevos_seguidores;}
-      const tt=sheet('TikTok');
-      if(tt&&tt[3]){redes.tiktok.seguidores=cleanNum(tt[3][1])||redes.tiktok.seguidores;redes.tiktok.impresiones=cleanNum(tt[3][3])||redes.tiktok.impresiones;redes.tiktok.interacciones=cleanNum(tt[3][5])||redes.tiktok.interacciones;redes.tiktok.publicaciones=cleanNum(tt[3][7])||redes.tiktok.publicaciones;}
-      if(tt&&tt[7]){redes.tiktok.alcance_promedio=cleanNum(tt[7][1])||redes.tiktok.alcance_promedio;redes.tiktok.nuevos_seguidores=cleanNum(tt[7][3])||redes.tiktok.nuevos_seguidores;redes.tiktok.engagement=parseFloat(String(tt[7][7]).replace(',','.'))||redes.tiktok.engagement;}
-      const yt=sheet('YouTube');
-      if(yt&&yt[3]){redes.youtube.seguidores=cleanNum(yt[3][1])||redes.youtube.seguidores;redes.youtube.impresiones=cleanNum(yt[3][3])||redes.youtube.impresiones;redes.youtube.publicaciones=cleanNum(yt[3][5])||redes.youtube.publicaciones;redes.youtube.nuevos_seguidores=cleanNum(yt[3][7])||redes.youtube.nuevos_seguidores;}
-      if(yt&&yt[7]){redes.youtube.interacciones=cleanNum(yt[7][1])||redes.youtube.interacciones;}
-      aiExtracted={periodo:per,redes};
-      renderAIResults({periodo:per,redes});
-      status.style.display='none';results.style.display='block';
-      toast('Métricas extraídas del Excel ✓');
-    }catch(e){status.style.display='none';toast('Error: '+e.message,'err');console.error(e);}
+          redes[red]={
+        seguidores:findMetric('seguidores'),
+        impresiones:findMetric('impresiones'),
+        interacciones:findMetric('interacciones'),
+        publicaciones:findMetric('publicaciones'),
+        nuevos_seguidores:findMetric('nuevo')
+      };
+    });
+
+    document.getElementById('output').textContent = JSON.stringify(redes,null,2);
   };
+
   reader.readAsArrayBuffer(file);
 }
 
-document.getElementById('pdfFile').addEventListener('change',e=>{if(e.target.files[0])parseMetricoolExcel(e.target.files[0]);});
-const pz=document.getElementById('pdfZone');
-pz.addEventListener('dragover',e=>{e.preventDefault();pz.style.borderColor="var(--accent)";pz.style.background='#e8f5e9';});
-pz.addEventListener('dragleave',()=>{pz.style.borderColor='';pz.style.background='';});
-pz.addEventListener('drop',e=>{e.preventDefault();pz.style.borderColor='';pz.style.background='';if(e.dataTransfer.files[0])parseMetricoolExcel(e.dataTransfer.files[0]);});
-
+document.getElementById('file').addEventListener('change',e=>{
+  if(e.target.files[0]) parseMetricoolExcel(e.target.files[0]);
+});
+  
 // ─── EMBAJADORES EXCEL ───
 let embData=null;
 const MESES_EMB={'enero':'Enero','febrero':'Febrero','marzo':'Marzo','abril':'Abril','mayo':'Mayo','junio':'Junio','julio':'Julio','agosto':'Agosto','septiembre':'Septiembre','octubre':'Octubre','noviembre':'Noviembre','diciembre':'Diciembre'};
