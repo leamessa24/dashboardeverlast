@@ -308,15 +308,51 @@ function parseMetricoolExcel(file){
         youtube:{seguidores:0,nuevos_seguidores:0,impresiones:0,interacciones:0,engagement:0,publicaciones:0,alcance_promedio:0}
       };
       // Resumen General: filas 10-13
-      const res=sheet("Resumen General");
-      if(res){
-        [[10,"facebook"],[11,"instagram"],[12,"tiktok"],[13,"youtube"]].forEach(([i,red])=>{
-          const row=res[i];if(!row)return;
-          redes[red].seguidores=cleanNum(row[2]);redes[red].publicaciones=cleanNum(row[4]);
-          redes[red].impresiones=cleanNum(row[5]);redes[red].interacciones=cleanNum(row[6]);
-          redes[red].nuevos_seguidores=cleanNum(row[7]);
-        });
-      }
+      const res = sheet("Resumen General");
+
+if (res) {
+
+  // 1. Encontrar fila de encabezados
+  const headerIndex = res.findIndex(r =>
+    r && r.some(c => String(c).toLowerCase().includes("plataforma"))
+  );
+
+  if (headerIndex === -1) {
+    toast("No se encontró la tabla de resumen","err");
+    return;
+  }
+
+  // 2. Obtener headers
+  const headers = res[headerIndex].map(h =>
+    String(h || "").toLowerCase().trim()
+  );
+
+  const getCol = name => headers.findIndex(h => h.includes(name));
+
+  const colPlataforma   = getCol("plataforma");
+  const colSeguidores   = getCol("seguidores");
+  const colPosts        = getCol("publicaciones");
+  const colImpresiones  = getCol("impresiones");
+  const colInteracciones= getCol("interacciones");
+  const colNuevos       = getCol("ganados");
+
+  // 3. Leer filas dinámicamente
+  const dataRows = res.slice(headerIndex + 1);
+
+  dataRows.forEach(row => {
+    if (!row) return;
+
+    const red = String(row[colPlataforma] || "").toLowerCase().trim();
+
+    if (redes[red]) {
+      redes[red].seguidores         = cleanNum(row[colSeguidores]);
+      redes[red].publicaciones      = cleanNum(row[colPosts]);
+      redes[red].impresiones        = cleanNum(row[colImpresiones]);
+      redes[red].interacciones      = cleanNum(row[colInteracciones]);
+      redes[red].nuevos_seguidores  = cleanNum(row[colNuevos]);
+    }
+  });
+}
       // Instagram
       const ig=sheet("Instagram");
       if(ig){
