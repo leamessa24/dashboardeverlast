@@ -403,6 +403,7 @@ async function saveOrganico(btnEl){
     for(const [red,vals] of Object.entries(metData.redes)){
       if(!Object.values(vals).some(v=>v&&v!==0))continue;
       await sbDel("reportes_organico",`periodo=eq.${encodeURIComponent(metData.periodo)}&red=eq.${red}`);
+      console.log("Enviando:", {periodo: metData.periodo, red, ...vals});
       await sbIns("reportes_organico",{periodo:metData.periodo,red,...vals});
     }
     toast(`Orgánico "${metData.periodo}" guardado ✓`);
