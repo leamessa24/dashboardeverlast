@@ -138,7 +138,16 @@ body{background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;min-h
         </div>
       </div>
       <div class="field"><label>URL del post</label><input type="url" id="p_url" placeholder="https://www.instagram.com/p/xxxxx/"></div>
-      <div class="field"><label>URL de imagen (opcional)</label><input type="url" id="p_img" placeholder="https://..."></div>
+      <div class="field">
+  <label>Imagen del post</label>
+  <label id="imgUploadZone" style="display:flex;align-items:center;gap:12px;border:2px dashed var(--border2);border-radius:var(--r);padding:10px 14px;cursor:pointer;background:var(--bg3);transition:all .15s">
+    <input type="file" id="p_img_file" accept="image/*" style="display:none">
+    <span style="font-size:22px">🖼️</span>
+    <span id="imgUploadLabel" style="font-size:12px;color:var(--text2)">Hacé click para subir imagen o captura</span>
+  </label>
+  <img id="p_img_preview" src="" alt="" style="display:none;margin-top:8px;max-height:120px;border-radius:var(--r);border:1px solid var(--border)">
+  <input type="hidden" id="p_img">
+</div>
       <div class="field"><label>Texto del post</label><textarea id="p_txt" placeholder="Cada paso cuenta..."></textarea></div>
       <div class="row3">
         <div class="field"><label>Alcance</label><input type="number" id="p_alc" placeholder="4664"></div>
@@ -444,7 +453,48 @@ pz.addEventListener("dragleave",()=>{pz.style.borderColor="";pz.style.background
 pz.addEventListener("drop",e=>{e.preventDefault();pz.style.borderColor="";pz.style.background="";if(e.dataTransfer.files[0])parseMetricoolExcel(e.dataTransfer.files[0]);});
 
 // ─── TOP POSTS ───
-async function savePost(){
+// Subida de imagen a Supabase Storage
+document.getElementById("p_img_file").addEventListener("change", async function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const label = document.getElementById("imgUploadLabel");
+  const preview = document.getElementById("p_img_preview");
+  const hiddenInput = document.getElementById("p_img");
+
+  label.textContent = "Subiendo...";
+
+  try {
+    const ext = file.name.split(".").pop();
+    const fileName = `top_posts/${Date.now()}.${ext}`;
+
+    const res = await fetch(`${SB}/storage/v1/object/post-images/${fileName}`, {
+      method: "POST",
+      headers: {
+        apikey: KEY,
+        Authorization: "Bearer " + KEY,
+        "Content-Type": file.type,
+        "Cache-Control": "3600"
+      },
+      body: file
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(err);
+    }
+
+    const publicUrl = `${SB}/storage/v1/object/public/post-images/${fileName}`;
+    hiddenInput.value = publicUrl;
+    preview.src = publicUrl;
+    preview.style.display = "block";
+    label.textContent = "✅ " + file.name;
+  } catch (err) {
+    label.textContent = "❌ Error al subir: " + err.message;
+    toast("Error al subir imagen: " + err.message, "err");
+  }
+});
+  async function savePost(){
   const per=document.getElementById("postPer").value;if(!per){toast("Seleccioná período","err");return;}
   try{
     await sbIns("top_posts",{periodo:per,red:document.getElementById("postRed").value,url_post:document.getElementById("p_url").value||null,url_imagen:document.getElementById("p_img").value||null,texto:document.getElementById("p_txt").value||null,alcance:+document.getElementById("p_alc").value||0,likes:+document.getElementById("p_lik").value||0,guardados:+document.getElementById("p_gua").value||0,engagement:+document.getElementById("p_eng").value||0,fecha_publicacion:document.getElementById("p_fecha").value||null});
