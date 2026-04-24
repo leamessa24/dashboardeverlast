@@ -189,7 +189,7 @@ tbody td.dim{color:var(--text3);font-size:11px}
   <div class="top-nav">
   <div class="top-tab active" onclick="showMod('ads')"><div class="tdot" style="background:var(--accent)"></div>Meta Ads</div>
   <div class="top-tab" onclick="showMod('org')"><div class="tdot" style="background:var(--ig)"></div>Orgánico</div>
-  <div class="top-tab" onclick="showMod('posts')"><div class="tdot" style="background:var(--amber)"></div>Top Posts</div>
+
   <div class="top-tab" onclick="showMod('emb')"><div class="tdot" style="background:#f59e0b"></div>Embajadores</div>
   <div class="top-tab" onclick="showMod('evo')"><div class="tdot" style="background:var(--blue)"></div>Evolución</div>
   <div class="top-tab" onclick="showMod('lt')"><div class="tdot" style="background:#16a34a"></div>Linktree</div>
@@ -248,6 +248,16 @@ tbody td.dim{color:var(--text3);font-size:11px}
   <div class="ss" id="sub-yt" style="display:none"><div><div class="sl">YouTube EVERLAST LATINO</div><div class="kg" id="ytk"></div></div></div>
 </div>
 
+<!-- POSTS -->
+<div class="module" id="mod-posts">
+  <div id="pl" class="loading"><div class="spinner"></div><span>Cargando posts...</span></div>
+  <div id="pe" class="empty" style="display:none"><div style="font-size:48px;opacity:.3">🖼️</div><div>Sin posts cargados para este período</div><div style="font-size:12px;margin-top:4px">Agregalos desde el panel admin</div></div>
+  <div id="pc2" style="display:none;padding:24px 28px;max-width:1280px;margin:0 auto">
+    <div class="sl">Top posts del mes</div>
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap" id="pfb"></div>
+    <div class="ptg" id="ptg"></div>
+  </div>
+</div>
 
 <!-- EVOLUCIÓN -->
 <div class="module" id="mod-evo">
